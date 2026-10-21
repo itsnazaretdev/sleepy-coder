@@ -1,0 +1,171 @@
+---
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+}
+
+const { title } = Astro.props;
+
+const navItems = [
+  { href: '/', label: 'Panel' },
+  { href: '#', label: 'Repositorios', soon: true },
+  { href: '#', label: 'Tareas', soon: true },
+  { href: '#', label: 'Sesiones', soon: true },
+  { href: '#', label: 'Informes', soon: true },
+  { href: '#', label: 'Ajustes', soon: true },
+];
+---
+
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <title>{title} · Sleepy Coder</title>
+  </head>
+  <body>
+    <div class="shell">
+      <aside class="sidebar">
+        <a href="/" class="brand">
+          <span class="brand-mark" aria-hidden="true">z<sup>z</sup></span>
+          <span>Sleepy Coder</span>
+        </a>
+        <nav>
+          <ul>
+            {
+              navItems.map((item) => (
+                <li>
+                  <a
+                    href={item.href}
+                    class:list={['nav-link', { active: Astro.url.pathname === item.href, soon: item.soon }]}
+                    aria-disabled={item.soon ? 'true' : undefined}
+                  >
+                    {item.label}
+                    {item.soon && <span class="soon-tag">pronto</span>}
+                  </a>
+                </li>
+              ))
+            }
+          </ul>
+        </nav>
+        <p class="tagline">Let your code sleep.</p>
+      </aside>
+      <main class="content">
+        <slot />
+      </main>
+    </div>
+  </body>
+</html>
+
+<style>
+  .shell {
+    display: grid;
+    grid-template-columns: 220px 1fr;
+    min-height: 100vh;
+  }
+
+  .sidebar {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-6);
+    padding: var(--space-6) var(--space-4);
+    background: var(--color-surface);
+    border-right: 1px solid var(--color-border);
+  }
+
+  .brand {
+    display: flex;
+    align-items: center;
+    gap: var(--space-2);
+    color: var(--color-text);
+    font-weight: 700;
+    font-size: 1.05rem;
+  }
+
+  .brand:hover {
+    text-decoration: none;
+  }
+
+  .brand-mark {
+    display: grid;
+    place-items: center;
+    width: 32px;
+    height: 32px;
+    border-radius: var(--radius-sm);
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+    font-size: 1rem;
+  }
+
+  .brand-mark sup {
+    font-size: 0.55em;
+    opacity: 0.7;
+  }
+
+  nav ul {
+    list-style: none;
+    padding: 0;
+    display: grid;
+    gap: var(--space-1);
+  }
+
+  .nav-link {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: var(--space-2) var(--space-3);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+  }
+
+  .nav-link:hover {
+    background: var(--color-surface-raised);
+    color: var(--color-text);
+    text-decoration: none;
+  }
+
+  .nav-link.active {
+    background: var(--color-accent-soft);
+    color: var(--color-accent);
+  }
+
+  .nav-link.soon {
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  .soon-tag {
+    font-size: 0.7rem;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+  }
+
+  .tagline {
+    margin-top: auto;
+    color: var(--color-text-muted);
+    font-size: 0.8rem;
+  }
+
+  .content {
+    padding: var(--space-8);
+    max-width: 1100px;
+  }
+
+  @media (max-width: 720px) {
+    .shell {
+      grid-template-columns: 1fr;
+    }
+
+    .sidebar {
+      border-right: none;
+      border-bottom: 1px solid var(--color-border);
+    }
+
+    .content {
+      padding: var(--space-4);
+    }
+  }
+</style>

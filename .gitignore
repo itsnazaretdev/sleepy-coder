@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.astro/
+coverage/
+*.log
+.DS_Store
+
+# Local data (SQLite database, history)
+data/*
+!data/.gitkeep
+
+.env
+.env.*
+!.env.example

@@ -1,0 +1,19 @@
+{
+  "name": "sleepy-coder",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first AI coding assistant powered by Ollama",
+  "type": "module",
+  "packageManager": "pnpm@10.28.0",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "pnpm --parallel --filter @sleepy-coder/server --filter @sleepy-coder/web dev",
+    "dev:server": "pnpm --filter @sleepy-coder/server dev",
+    "dev:web": "pnpm --filter @sleepy-coder/web dev",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck"
+  }
+}

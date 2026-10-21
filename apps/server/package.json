@@ -1,0 +1,26 @@
+{
+  "name": "@sleepy-coder/server",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sleepy Coder local backend (Fastify)",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx watch src/index.ts",
+    "start": "tsx src/index.ts",
+    "build": "tsc --noEmit",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.0",
+    "@sleepy-coder/ollama": "workspace:*",
+    "@sleepy-coder/shared": "workspace:*",
+    "fastify": "^5.0.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "tsx": "^4.19.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}

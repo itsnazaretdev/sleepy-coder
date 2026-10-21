@@ -1,0 +1,121 @@
+---
+import Layout from '../layouts/Layout.astro';
+import HealthStatus from '../components/HealthStatus.tsx';
+import OllamaStatus from '../components/OllamaStatus.tsx';
+
+const placeholders = [
+  { title: 'Repositorios', text: 'Aún no hay repositorios conectados.', phase: 'Fase 3' },
+  { title: 'Tareas aprobadas', text: 'Aquí aparecerán las tareas listas para ejecutar.', phase: 'Fase 4' },
+  { title: 'Sesiones recientes', text: 'Historial de Work Sessions y sus informes.', phase: 'Fase 6' },
+];
+---
+
+<Layout title="Panel">
+  <header class="page-header">
+    <div>
+      <h1>Panel</h1>
+      <p class="subtitle">Tu asistente de código local. Trabaja cuando tú decides.</p>
+    </div>
+    <button class="primary" type="button" disabled title="Disponible en la Fase 6">
+      Iniciar Work Session
+    </button>
+  </header>
+
+  <section class="grid">
+    <HealthStatus client:load />
+    <OllamaStatus client:load />
+
+    {
+      placeholders.map((card) => (
+        <article class="card">
+          <div class="card-head">
+            <h2>{card.title}</h2>
+            <span class="phase">{card.phase}</span>
+          </div>
+          <p>{card.text}</p>
+        </article>
+      ))
+    }
+  </section>
+</Layout>
+
+<style>
+  .page-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: var(--space-4);
+    margin-bottom: var(--space-8);
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+  }
+
+  .primary {
+    padding: var(--space-3) var(--space-6);
+    background: var(--color-accent-strong);
+    color: var(--color-text);
+    border: none;
+    border-radius: var(--radius-md);
+    font: inherit;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .primary:disabled {
+    opacity: 0.45;
+    cursor: not-allowed;
+  }
+
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: var(--space-4);
+  }
+
+  .card {
+    display: grid;
+    gap: var(--space-2);
+    padding: var(--space-6);
+    background: var(--color-surface);
+    border: 1px dashed var(--color-border);
+    border-radius: var(--radius-lg);
+  }
+
+  .card-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .card h2 {
+    font-size: 1rem;
+    font-weight: 600;
+  }
+
+  .card p {
+    color: var(--color-text-muted);
+    font-size: 0.9rem;
+  }
+
+  .phase {
+    font-size: 0.7rem;
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    padding: 0 var(--space-2);
+    border-radius: 999px;
+  }
+
+  @media (max-width: 720px) {
+    .page-header {
+      flex-direction: column;
+    }
+  }
+</style>
