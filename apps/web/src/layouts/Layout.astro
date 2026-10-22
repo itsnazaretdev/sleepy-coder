@@ -7,9 +7,11 @@ interface Props {
 
 const { title } = Astro.props;
 
+const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
+
 const navItems = [
   { href: '/', label: 'Panel' },
-  { href: '#', label: 'Repositorios', soon: true },
+  { href: '/repositories', label: 'Repositorios' },
   { href: '#', label: 'Tareas', soon: true },
   { href: '#', label: 'Sesiones', soon: true },
   { href: '#', label: 'Informes', soon: true },
@@ -39,7 +41,7 @@ const navItems = [
                 <li>
                   <a
                     href={item.href}
-                    class:list={['nav-link', { active: Astro.url.pathname === item.href, soon: item.soon }]}
+                    class:list={['nav-link', { active: !item.soon && currentPath === item.href, soon: item.soon }]}
                     aria-disabled={item.soon ? 'true' : undefined}
                   >
                     {item.label}

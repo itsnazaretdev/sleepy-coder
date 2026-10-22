@@ -77,3 +77,52 @@ Only real request failures (e.g. `POST /ollama/test`) map to 4xx/5xx codes.
 
 **Why:** The backend itself is healthy when Ollama is closed; the UI just needs to show it
 and explain how to start it.
+
+## ADR-010 — Saved repositories in a JSON file (for now)
+
+**Decision:** The list of repositories is stored in `data/repositories.json` behind a
+`RepositoryStore` interface. Writes are serialized and atomic (temp file + rename).
+
+**Why:** Phase 3 only needs a short list. SQLite (planned in the stack) will arrive with
+Phase 4, when tasks and history need real queries; only the store implementation changes.
+
+## ADR-011 — Repository paths are validated and analysis is read-only
+
+**Decision:** A path is accepted only if it is absolute (`~` is expanded), exists, is a
+folder and is the root of a Git repository. It is stored resolved with `realpath`, so the
+same folder reached through a symlink or a trailing slash is detected as a duplicate.
+The id is a hash of that path. The scanner skips symlinks and generated folders and stops
+at 20,000 files. Git is only inspected with fixed, read-only commands.
+
+**Why:** These checks are the base for the safety rules of later phases (the agent must
+never leave the repository). Analysis must never change anything on disk.
+
+## ADR-012 — Own stack detection instead of Tree-sitter (for now)
+
+**Decision:** Phase 3 detects languages by extension and the stack from manifests
+(`package.json`, `composer.json`, `pom.xml`, …) and lockfiles.
+
+**Why:** It is fast, has no dependencies and is enough for a structural overview.
+
+## ADR-013 — Native folder dialog opened by the backend
+
+**Decision:** `POST /system/pick-folder` makes the backend open the OS dialog
+(`osascript` "choose folder" on macOS, `zenity` on Linux) and return the chosen path.
+Typing the path stays available as a fallback. Commands and arguments are fixed; only
+one dialog can be open at a time; it gives up after 5 minutes.
+
+**Why:** Browsers never expose a folder's real path to a web page (not with drag & drop,
+not with `<input type="file">`). Since the backend runs on the user's machine, it can show
+the native dialog instead, which is much easier than copying paths.
+
+## ADR-014 — Protection against other websites and DNS rebinding
+
+**Decision:** Every request must be addressed to `localhost`, `127.0.0.1` or `[::1]`.
+Every POST/DELETE must carry the `x-sleepy-client: web` header.
+
+**Why:** CORS only stops other sites from *reading* responses; a simple POST is still
+*sent*. A custom header forces a CORS preflight, which is rejected for any origin other
+than our web app. The Host check blocks DNS rebinding. This matters before the agent is
+able to modify code (Phase 5).
+Tree-sitter is kept for Phase 4/5, where real code parsing (functions, TODOs in context)
+is needed.

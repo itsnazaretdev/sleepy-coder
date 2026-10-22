@@ -24,6 +24,14 @@
   --color-warning: #fbbf24;
   --color-danger: #f87171;
 
+  /* Chart series (language bar). Last one is for "Otros". */
+  --chart-1: #a78bfa;
+  --chart-2: #60a5fa;
+  --chart-3: #34d399;
+  --chart-4: #fbbf24;
+  --chart-5: #f472b6;
+  --chart-6: #6b6480;
+
   /* Typography */
   --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --font-mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, monospace;

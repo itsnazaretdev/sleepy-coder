@@ -1,0 +1,29 @@
+---
+import Layout from '../layouts/Layout.astro';
+import RepositoryManager from '../components/RepositoryManager.tsx';
+---
+
+<Layout title="Repositorios">
+  <header class="page-header">
+    <h1>Repositorios</h1>
+    <p class="subtitle">Añade un repositorio local y mira de qué está hecho.</p>
+  </header>
+
+  <RepositoryManager client:load />
+</Layout>
+
+<style>
+  .page-header {
+    margin-bottom: var(--space-8);
+  }
+
+  h1 {
+    font-size: 1.75rem;
+    font-weight: 700;
+  }
+
+  .subtitle {
+    color: var(--color-text-muted);
+    margin-top: var(--space-1);
+  }
+</style>

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { ApiError, OllamaStatusResponse, OllamaTestResponse } from '@sleepy-coder/shared';
 import { buildApp } from '../src/app.js';
+import { clientHeaders } from './client-headers.js';
 import { fakeOllama, model } from './fake-ollama.js';
 
 const installed = [model('qwen2.5:3b'), model('gemma3:4b')];
@@ -62,7 +63,7 @@ describe('POST /ollama/test', () => {
   it('sends the prompt to the selected model and returns its reply', async () => {
     const fake = fakeOllama({ models: installed, reply: '¡Sí, listo!' });
     const server = await appWith(fake);
-    const response = await server.inject({ method: 'POST', url: '/ollama/test' });
+    const response = await server.inject({ method: 'POST', headers: clientHeaders, url: '/ollama/test' });
 
     expect(response.statusCode).toBe(200);
     expect(response.json<OllamaTestResponse>()).toEqual({
@@ -75,7 +76,7 @@ describe('POST /ollama/test', () => {
 
   it('returns 409 when no models are installed', async () => {
     const server = await appWith(fakeOllama({ models: [] }));
-    const response = await server.inject({ method: 'POST', url: '/ollama/test' });
+    const response = await server.inject({ method: 'POST', headers: clientHeaders, url: '/ollama/test' });
 
     expect(response.statusCode).toBe(409);
     expect(response.json<ApiError>().error).toBe('no-model');
@@ -84,7 +85,7 @@ describe('POST /ollama/test', () => {
   it('returns 409 and does not call chat when the configured model is missing', async () => {
     const fake = fakeOllama({ models: installed });
     const server = await appWith(fake, 'mistral:7b');
-    const response = await server.inject({ method: 'POST', url: '/ollama/test' });
+    const response = await server.inject({ method: 'POST', headers: clientHeaders, url: '/ollama/test' });
 
     expect(response.statusCode).toBe(409);
     expect(fake.chatCalls).toEqual([]);
@@ -97,7 +98,7 @@ describe('POST /ollama/test', () => {
     ['bad-response', 502],
   ] as const)('maps Ollama error "%s" to HTTP %i', async (code, status) => {
     const server = await appWith(fakeOllama({ failWith: code }));
-    const response = await server.inject({ method: 'POST', url: '/ollama/test' });
+    const response = await server.inject({ method: 'POST', headers: clientHeaders, url: '/ollama/test' });
 
     expect(response.statusCode).toBe(status);
     expect(response.json<ApiError>().error).toBe(code);

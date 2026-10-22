@@ -1,0 +1,23 @@
+{
+  "name": "@sleepy-coder/git",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Read-only Git inspection on top of simple-git",
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
+  },
+  "dependencies": {
+    "@sleepy-coder/shared": "workspace:*",
+    "simple-git": "^3.27.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.6.0",
+    "vitest": "^3.0.0"
+  }
+}

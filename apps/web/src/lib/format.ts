@@ -39,6 +39,14 @@ export function formatBytes(bytes: number): string {
   return `${rounded.replace('.', ',')} ${unit}`;
 }
 
+const dateFormatter = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+
+/** Formats an ISO date in Spanish, e.g. "21 oct 2026, 18:30". */
+export function formatDate(iso: string): string {
+  const date = new Date(iso);
+  return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date);
+}
+
 /**
  * Formats milliseconds as seconds with one decimal, Spanish style.
  * Example: 1234 → "1,2 s".

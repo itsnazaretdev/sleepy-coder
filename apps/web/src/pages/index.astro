@@ -4,7 +4,6 @@ import HealthStatus from '../components/HealthStatus.tsx';
 import OllamaStatus from '../components/OllamaStatus.tsx';
 
 const placeholders = [
-  { title: 'Repositorios', text: 'Aún no hay repositorios conectados.', phase: 'Fase 3' },
   { title: 'Tareas aprobadas', text: 'Aquí aparecerán las tareas listas para ejecutar.', phase: 'Fase 4' },
   { title: 'Sesiones recientes', text: 'Historial de Work Sessions y sus informes.', phase: 'Fase 6' },
 ];
@@ -24,6 +23,14 @@ const placeholders = [
   <section class="grid">
     <HealthStatus client:load />
     <OllamaStatus client:load />
+
+    <a class="card card-link" href="/repositories">
+      <div class="card-head">
+        <h2>Repositorios</h2>
+        <span class="arrow" aria-hidden="true">→</span>
+      </div>
+      <p>Añade un repositorio local y analiza su estructura, lenguajes y stack.</p>
+    </a>
 
     {
       placeholders.map((card) => (
@@ -103,6 +110,21 @@ const placeholders = [
   .card p {
     color: var(--color-text-muted);
     font-size: 0.9rem;
+  }
+
+  .card-link {
+    border-style: solid;
+    color: inherit;
+    transition: border-color 0.15s ease;
+  }
+
+  .card-link:hover {
+    border-color: var(--color-accent-strong);
+    text-decoration: none;
+  }
+
+  .arrow {
+    color: var(--color-accent);
   }
 
   .phase {

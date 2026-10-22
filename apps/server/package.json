@@ -13,6 +13,8 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.0",
+    "@sleepy-coder/analyzer": "workspace:*",
+    "@sleepy-coder/git": "workspace:*",
     "@sleepy-coder/ollama": "workspace:*",
     "@sleepy-coder/shared": "workspace:*",
     "fastify": "^5.0.0"

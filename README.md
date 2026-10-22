@@ -1,90 +1,48 @@
-# 💤 Sleepy Coder
+# Sleepy Coder — notes for Claude
 
-**Let your code sleep. We'll handle the boring stuff.**
+The full project brief is in `docs/brief.md`. Read it before making changes.
+Architectural decisions are recorded in `docs/decisions.md`.
 
-Sleepy Coder is a local-first AI coding assistant. It analyzes your repositories, finds
-repetitive improvements (TODOs, missing tests, outdated docs…) and, once you approve them,
-works through them on demand using a local model via [Ollama](https://ollama.com).
-No cloud, no paid APIs: your code, your data, your machine.
+## Current status
 
-> Built for the Hacktoberfest **Slow and Steady** challenge.
+- Phase 1 (Foundation): done. pnpm monorepo, Fastify `/health`, Astro + React dashboard, Vitest.
+- Phase 2 (Ollama): done. `packages/ollama` client, `GET /ollama/status`, `POST /ollama/test`,
+  Ollama card on the dashboard.
+- Phase 3 (Repository Scout): done. `packages/analyzer` (file scan, languages, stack detection),
+  `packages/git` (read-only inspection with simple-git), `/repositories` routes, Repositories page.
+  Saved repositories live in `data/repositories.json`.
+- Next up: Phase 4 (Task Hunter). The report `warnings` are its starting point.
 
-## Status
+Local model on the dev machine: `gemma3:4b` (the user prefers Gemma).
 
-🚧 Phase 2 — Ollama integration. The dashboard shows whether Ollama is running, lists your
-installed models and can send a test prompt. See the roadmap in [`docs/brief.md`](docs/brief.md).
+## Configuration (environment variables)
 
-## Requirements
-
-- Node.js 20 or newer
-- pnpm 10
-- [Ollama](https://ollama.com) running locally, with at least one model
-  (`ollama pull gemma3:4b` works well on a 16 GB laptop)
-
-## Getting started
-
-```bash
-pnpm install
-pnpm dev
-```
-
-- Dashboard: http://127.0.0.1:4321
-- Backend health: http://127.0.0.1:4317/health
-
-Both only listen on `127.0.0.1`: nothing is exposed to your network.
-
-## Configuration
-
-By default Sleepy Coder uses the first Gemma model it finds. To use another one:
-
-```bash
-SLEEPY_MODEL=qwen2.5:3b pnpm dev
-```
-
-| Variable | Default |
-|---|---|
-| `SLEEPY_MODEL` | first installed Gemma model |
-| `SLEEPY_OLLAMA_URL` | `http://127.0.0.1:11434` |
-
-## API
-
-| Method | Route | Description |
+| Variable | Default | Purpose |
 |---|---|---|
-| GET | `/health` | Backend status |
-| GET | `/ollama/status` | Ollama running?, version, installed models, selected model |
-| POST | `/ollama/test` | Sends a short prompt to the selected model |
+| `SLEEPY_OLLAMA_URL` | `http://127.0.0.1:11434` | Where Ollama listens |
+| `SLEEPY_MODEL` | first installed Gemma model | Force a specific model |
+| `SLEEPY_DATA_DIR` | `<repo root>/data` | Local data folder |
 
-## Scripts
+## Conventions
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Runs backend and frontend together |
-| `pnpm dev:server` | Backend only |
-| `pnpm dev:web` | Frontend only |
-| `pnpm test` | Runs all tests (Vitest) |
-| `pnpm typecheck` | Type-checks every workspace |
-| `pnpm build` | Builds the frontend and type-checks the backend |
+- TypeScript everywhere. Code and identifiers in English; user-facing UI text in Spanish.
+- Plain CSS: theme tokens in `apps/web/src/styles/global.css`, scoped `<style>` in Astro,
+  CSS Modules in React Islands. No CSS frameworks.
+- Backend listens only on `127.0.0.1`. Never expose it publicly.
+- POST/DELETE routes require the `x-sleepy-client: web` header (`src/security.ts`).
+  In server tests use `clientHeaders` from `test/client-headers.ts`.
+- Adding a repository: "Elegir carpeta…" opens the native dialog through `POST /system/pick-folder`.
+- No schedulers, cron jobs or daemons: execution is always started by the user.
+- New packages go in `packages/<name>` with the `@sleepy-coder/<name>` scope.
+  Create a package only when a phase actually needs it.
+- Shared packages export TypeScript source directly (`"exports": "./src/index.ts"`).
+- Run `pnpm test` and `pnpm typecheck` before saying something works.
 
-## Project structure
+## Commands
 
-```text
-sleepy-coder/
-├── apps/
-│   ├── web/        # Astro + React Islands dashboard (plain CSS)
-│   └── server/     # Fastify API, listens on 127.0.0.1
-├── packages/
-│   ├── ollama/     # Minimal Ollama client (native fetch)
-│   └── shared/     # Shared TypeScript types and constants
-├── data/           # Local SQLite database (git-ignored)
-└── docs/           # Brief and architecture decisions
+```bash
+pnpm install        # install all workspaces
+pnpm dev            # backend (4317) + frontend (4321) together
+pnpm test           # Vitest in every workspace
+pnpm typecheck      # tsc / astro check in every workspace
 ```
-
-More packages (`git`, `analyzer`, `tasks`, `agent`) will be added in later phases.
-
-## Tech stack
-
-Astro · React · TypeScript · Fastify · Ollama · Vitest · plain CSS
-
-## License
-
-MIT
