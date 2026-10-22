@@ -17,6 +17,7 @@
     "@sleepy-coder/git": "workspace:*",
     "@sleepy-coder/ollama": "workspace:*",
     "@sleepy-coder/shared": "workspace:*",
+    "@sleepy-coder/tasks": "workspace:*",
     "fastify": "^5.0.0"
   },
   "devDependencies": {

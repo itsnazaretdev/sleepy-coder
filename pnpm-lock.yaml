@@ -25,6 +25,9 @@ importers:
       '@sleepy-coder/shared':
         specifier: workspace:*
         version: link:../../packages/shared
+      '@sleepy-coder/tasks':
+        specifier: workspace:*
+        version: link:../../packages/tasks
       fastify:
         specifier: ^5.0.0
         version: 5.12.7
@@ -128,6 +131,25 @@ importers:
       typescript:
         specifier: ^5.6.0
         version: 5.9.3
+
+  packages/tasks:
+    dependencies:
+      '@sleepy-coder/analyzer':
+        specifier: workspace:*
+        version: link:../analyzer
+      '@sleepy-coder/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(tsx@4.23.15)(yaml@2.9.1)
 
 packages:
 

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { mkdir, mkdtemp, readFile, realpath, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -46,8 +47,20 @@ describe('POST /repositories', () => {
     const repo = response.json<Repository>();
     expect(repo).toMatchObject({ id: repositoryId(repoDir), name: 'my-project', path: repoDir });
 
-    const saved = JSON.parse(await readFile(join(dataDir, 'repositories.json'), 'utf8'));
-    expect(saved.repositories).toHaveLength(1);
+    expect(existsSync(join(dataDir, 'sleepy-coder.db'))).toBe(true);
+  });
+
+  it('imports repositories saved by Phase 3 (repositories.json) once', async () => {
+    const legacy: Repository = { id: repositoryId(repoDir), name: 'my-project', path: repoDir, addedAt: '2026-10-21T10:00:00.000Z' };
+    await mkdir(dataDir, { recursive: true });
+    await writeFile(join(dataDir, 'repositories.json'), JSON.stringify({ version: 1, repositories: [legacy] }));
+
+    await createApp();
+    const list = (await app.inject({ method: 'GET', url: '/repositories' })).json<Repository[]>();
+
+    expect(list).toEqual([legacy]);
+    expect(existsSync(join(dataDir, 'repositories.json'))).toBe(false);
+    expect(existsSync(join(dataDir, 'repositories.json.imported'))).toBe(true);
   });
 
   it.each([

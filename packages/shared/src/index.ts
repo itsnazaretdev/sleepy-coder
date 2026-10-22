@@ -152,6 +152,51 @@ export interface AddRepositoryRequest {
   path: string;
 }
 
+// --- Tasks ------------------------------------------------------------------
+
+export type TaskCategory = 'todo' | 'tests' | 'documentation' | 'refactor' | 'maintenance';
+export type TaskLevel = 'low' | 'medium' | 'high';
+export type TaskComplexity = 'small' | 'medium' | 'large';
+export type TaskStatus = 'pending' | 'approved' | 'discarded';
+/** "static" = found by rules (no AI), "ai" = suggested by the local model. */
+export type TaskSource = 'static' | 'ai';
+
+/** A task as produced by a hunter, before it is saved. */
+export interface TaskDraft {
+  /** Stable key used to recognise the same task on the next hunt. */
+  fingerprint: string;
+  source: TaskSource;
+  title: string;
+  description: string;
+  category: TaskCategory;
+  priority: TaskLevel;
+  complexity: TaskComplexity;
+  risk: TaskLevel;
+  affectedFiles: string[];
+  suggestedImplementation: string;
+}
+
+export interface Task extends TaskDraft {
+  id: string;
+  repositoryId: string;
+  status: TaskStatus;
+  /** ISO 8601 timestamps. */
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface HuntResponse {
+  tasks: Task[];
+  /** New tasks found in this hunt. */
+  added: number;
+  /** Pending tasks that no longer apply and were removed. */
+  removed: number;
+}
+
+export interface UpdateTaskRequest {
+  status: TaskStatus;
+}
+
 // --- System -----------------------------------------------------------------
 
 export interface PickFolderResponse {

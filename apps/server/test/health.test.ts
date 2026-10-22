@@ -2,12 +2,13 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { HealthResponse } from '@sleepy-coder/shared';
 import { buildApp } from '../src/app.js';
+import { memoryDb } from './memory-db.js';
 
 describe('GET /health', () => {
   let app: FastifyInstance;
 
   beforeAll(async () => {
-    app = await buildApp();
+    app = await buildApp({ database: memoryDb() });
   });
 
   afterAll(async () => {

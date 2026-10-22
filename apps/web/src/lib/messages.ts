@@ -16,6 +16,7 @@ const ERROR_MESSAGES: Record<string, string> = {
   'not-a-git-repo': 'Esa carpeta no es la raíz de un repositorio Git (le falta la carpeta .git).',
   'already-added': 'Ese repositorio ya está en la lista.',
   'repository-not-found': 'Ese repositorio ya no está en la lista.',
+  'task-not-found': 'Esa tarea ya no existe. Vuelve a buscar tareas.',
 
   // Folder picker
   'unsupported-platform': 'En este sistema no puedo abrir el selector de carpetas. Escribe la ruta a mano.',

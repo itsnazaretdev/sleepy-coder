@@ -5,11 +5,15 @@ import {
   type AddRepositoryRequest,
   type ApiError,
   type HealthResponse,
+  type HuntResponse,
   type OllamaStatusResponse,
   type OllamaTestResponse,
   type PickFolderResponse,
   type Repository,
   type RepositoryReport,
+  type Task,
+  type TaskStatus,
+  type UpdateTaskRequest,
 } from '@sleepy-coder/shared';
 
 const DEFAULT_TIMEOUT_MS = 3_000;
@@ -97,6 +101,30 @@ export function removeRepository(id: string): Promise<void> {
 
 export function analyzeRepository(id: string): Promise<RepositoryReport> {
   return request<RepositoryReport>(`/repositories/${encodeURIComponent(id)}/analysis`, {}, ANALYSIS_TIMEOUT_MS);
+}
+
+// --- Tasks ------------------------------------------------------------------
+
+export function fetchTasks(repositoryId: string): Promise<Task[]> {
+  return request<Task[]>(`/repositories/${encodeURIComponent(repositoryId)}/tasks`);
+}
+
+/** Looks for new tasks in the repository (no AI). */
+export function huntTasks(repositoryId: string): Promise<HuntResponse> {
+  return request<HuntResponse>(
+    `/repositories/${encodeURIComponent(repositoryId)}/tasks/hunt`,
+    { method: 'POST' },
+    ANALYSIS_TIMEOUT_MS,
+  );
+}
+
+export function updateTaskStatus(id: string, status: TaskStatus): Promise<Task> {
+  const body: UpdateTaskRequest = { status };
+  return request<Task>(`/tasks/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body),
+  });
 }
 
 // --- System -----------------------------------------------------------------

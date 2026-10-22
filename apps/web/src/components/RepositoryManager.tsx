@@ -10,6 +10,7 @@ import {
 } from '../lib/api';
 import { describeError } from '../lib/messages';
 import RepositoryReportView from './RepositoryReportView';
+import TaskBoard from './TaskBoard';
 import styles from './RepositoryManager.module.css';
 
 type ListState = { kind: 'loading' } | { kind: 'error' } | { kind: 'ready'; repositories: Repository[] };
@@ -257,6 +258,8 @@ export default function RepositoryManager() {
             onReanalyze={() => void runAnalysis(selectedId)}
           />
         )}
+
+        {selectedId && shownReport && <TaskBoard repositoryId={selectedId} />}
       </section>
     </div>
   );

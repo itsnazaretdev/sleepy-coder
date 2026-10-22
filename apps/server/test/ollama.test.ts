@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { ApiError, OllamaStatusResponse, OllamaTestResponse } from '@sleepy-coder/shared';
 import { buildApp } from '../src/app.js';
+import { memoryDb } from './memory-db.js';
 import { clientHeaders } from './client-headers.js';
 import { fakeOllama, model } from './fake-ollama.js';
 
@@ -15,7 +16,7 @@ afterEach(async () => {
 });
 
 async function appWith(fake: ReturnType<typeof fakeOllama>, configuredModel: string | null = null) {
-  app = await buildApp({ ollama: fake.client, config: { model: configuredModel } });
+  app = await buildApp({ database: memoryDb(), ollama: fake.client, config: { model: configuredModel } });
   return app;
 }
 

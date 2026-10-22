@@ -78,7 +78,7 @@ Only real request failures (e.g. `POST /ollama/test`) map to 4xx/5xx codes.
 **Why:** The backend itself is healthy when Ollama is closed; the UI just needs to show it
 and explain how to start it.
 
-## ADR-010 — Saved repositories in a JSON file (for now)
+## ADR-010 — Saved repositories in a JSON file (superseded by ADR-015)
 
 **Decision:** The list of repositories is stored in `data/repositories.json` behind a
 `RepositoryStore` interface. Writes are serialized and atomic (temp file + rename).
@@ -124,5 +124,30 @@ Every POST/DELETE must carry the `x-sleepy-client: web` header.
 *sent*. A custom header forces a CORS preflight, which is rejected for any origin other
 than our web app. The Host check blocks DNS rebinding. This matters before the agent is
 able to modify code (Phase 5).
+
+## ADR-015 — SQLite with Node's built-in `node:sqlite`
+
+**Decision:** Local data lives in `data/sleepy-coder.db`, opened with `node:sqlite`
+(Node 22.13+). The schema is versioned with `PRAGMA user_version`; new changes are added as
+new migrations, never by editing old ones. Foreign keys are on, so deleting a repository
+deletes its tasks. On first start, Phase 3's `repositories.json` is imported once and
+renamed to `repositories.json.imported`. Tests use an in-memory database.
+
+**Why:** No native dependency to compile (unlike `better-sqlite3`), and it is enough for a
+local, single-user app. Node prints an "experimental" warning for now; the API is stable
+enough for our simple queries.
+
+## ADR-016 — Static task hunting and task fingerprints
+
+**Decision:** Phase 4a finds tasks without AI: report gaps (no tests, README, LICENSE) and
+`TODO`/`FIXME`/`HACK`/`XXX` comments. Markers count only in UPPERCASE (in Spanish "todo" is a
+normal word), only inside comments and not inside strings. Each task has a fingerprint
+(e.g. file + marker + text, not the line number), stored hashed. On each hunt, new
+fingerprints are added as pending, existing ones keep their status, and pending tasks that
+no longer appear are removed. Approved and discarded tasks are never touched by a hunt.
+
+**Why:** Re-running a hunt must be safe and predictable: no duplicates, and a human decision
+(approve/discard) is never undone automatically. AI suggestions (Phase 4b) will use the same
+mechanism with `source = 'ai'`.
 Tree-sitter is kept for Phase 4/5, where real code parsing (functions, TODOs in context)
 is needed.

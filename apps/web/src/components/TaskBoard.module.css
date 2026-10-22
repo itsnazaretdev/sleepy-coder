@@ -1,0 +1,255 @@
+.board {
+  display: grid;
+  gap: var(--space-4);
+  margin-top: var(--space-8);
+  padding-top: var(--space-6);
+  border-top: 1px solid var(--color-border);
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-4);
+}
+
+.header h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.muted {
+  color: var(--color-text-muted);
+  font-size: 0.85rem;
+}
+
+.error {
+  color: var(--color-danger);
+  font-size: 0.85rem;
+}
+
+.notice {
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-soft);
+  border-radius: var(--radius-sm);
+  color: var(--color-accent);
+  font-size: 0.85rem;
+}
+
+.primary {
+  flex-shrink: 0;
+  padding: var(--space-2) var(--space-4);
+  background: var(--color-accent-strong);
+  color: var(--color-text);
+  border: none;
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.primary:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.empty {
+  display: grid;
+  gap: var(--space-1);
+  padding: var(--space-6);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+}
+
+/* Tabs */
+
+.tabs {
+  display: flex;
+  gap: var(--space-1);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.tab,
+.tabActive {
+  padding: var(--space-2) var(--space-4);
+  background: none;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -1px;
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
+.tab:hover {
+  color: var(--color-text);
+}
+
+.tabActive {
+  color: var(--color-accent);
+  border-bottom-color: var(--color-accent);
+}
+
+.count {
+  margin-left: var(--space-1);
+  padding: 0 var(--space-2);
+  border-radius: 999px;
+  background: var(--color-surface-raised);
+  font-size: 0.75rem;
+}
+
+/* Task cards */
+
+.list {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.card {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.cardHead {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-3);
+}
+
+.cardHead h3 {
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.priority {
+  flex-shrink: 0;
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  border: 1px solid currentColor;
+}
+
+.high {
+  color: var(--color-danger);
+}
+
+.medium {
+  color: var(--color-warning);
+}
+
+.low {
+  color: var(--color-text-muted);
+}
+
+.description {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.meta {
+  list-style: none;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+  color: var(--color-text-muted);
+}
+
+.meta li {
+  padding: 1px var(--space-2);
+  background: var(--color-surface-raised);
+  border-radius: var(--radius-sm);
+}
+
+.files {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  font-size: 0.75rem;
+}
+
+.files code {
+  color: var(--color-accent);
+}
+
+.suggestion {
+  font-size: 0.8rem;
+}
+
+.suggestion summary {
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.suggestion p {
+  margin-top: var(--space-1);
+  padding-left: var(--space-3);
+  border-left: 2px solid var(--color-border);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-1);
+}
+
+.approve,
+.discard,
+.reset {
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+  background: none;
+}
+
+.approve {
+  color: var(--color-success);
+  border: 1px solid rgb(74 222 128 / 0.5);
+}
+
+.approve:hover:not(:disabled) {
+  background: rgb(74 222 128 / 0.12);
+}
+
+.discard {
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border);
+}
+
+.discard:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+
+.reset {
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+}
+
+.approve:disabled,
+.discard:disabled,
+.reset:disabled {
+  opacity: 0.5;
+  cursor: progress;
+}
+
+@media (max-width: 720px) {
+  .header,
+  .cardHead {
+    flex-direction: column;
+  }
+}

@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { ApiError, PickFolderResponse } from '@sleepy-coder/shared';
 import { buildApp } from '../src/app.js';
+import { memoryDb } from './memory-db.js';
 import { hostnameOf } from '../src/security.js';
 import type { FolderPicker } from '../src/services/folder-picker.js';
 import { clientHeaders } from './client-headers.js';
@@ -43,7 +44,7 @@ describe('hostnameOf', () => {
 
 describe('request protection', () => {
   it('rejects requests addressed to another host (DNS rebinding)', async () => {
-    app = await buildApp({ folderPicker: fakePicker(null) });
+    app = await buildApp({ database: memoryDb(), folderPicker: fakePicker(null) });
     const response = await app.inject({ method: 'GET', url: '/health', headers: { host: 'evil.example.com:4317' } });
 
     expect(response.statusCode).toBe(403);
@@ -51,14 +52,14 @@ describe('request protection', () => {
   });
 
   it('allows GET without the client header', async () => {
-    app = await buildApp({ folderPicker: fakePicker(null) });
+    app = await buildApp({ database: memoryDb(), folderPicker: fakePicker(null) });
     const response = await app.inject({ method: 'GET', url: '/health', headers: { host: '127.0.0.1:4317' } });
     expect(response.statusCode).toBe(200);
   });
 
   it('rejects POST without the client header and does not run the action', async () => {
     const picker = fakePicker('/x');
-    app = await buildApp({ folderPicker: picker });
+    app = await buildApp({ database: memoryDb(), folderPicker: picker });
     const response = await app.inject({ method: 'POST', url: '/system/pick-folder' });
 
     expect(response.statusCode).toBe(403);
@@ -67,7 +68,7 @@ describe('request protection', () => {
   });
 
   it('answers the CORS preflight for the local web app, allowing the client header', async () => {
-    app = await buildApp({ folderPicker: fakePicker(null) });
+    app = await buildApp({ database: memoryDb(), folderPicker: fakePicker(null) });
     const response = await app.inject({
       method: 'OPTIONS',
       url: '/system/pick-folder',
@@ -86,7 +87,7 @@ describe('request protection', () => {
 
 describe('POST /system/pick-folder', () => {
   it('returns the chosen path', async () => {
-    app = await buildApp({ folderPicker: fakePicker('/Users/naz/Desktop/sleepy-coder') });
+    app = await buildApp({ database: memoryDb(), folderPicker: fakePicker('/Users/naz/Desktop/sleepy-coder') });
     const response = await app.inject({ method: 'POST', url: '/system/pick-folder', headers: clientHeaders });
 
     expect(response.statusCode).toBe(200);
@@ -94,7 +95,7 @@ describe('POST /system/pick-folder', () => {
   });
 
   it('returns null when the dialog is cancelled', async () => {
-    app = await buildApp({ folderPicker: fakePicker(null) });
+    app = await buildApp({ database: memoryDb(), folderPicker: fakePicker(null) });
     const response = await app.inject({ method: 'POST', url: '/system/pick-folder', headers: clientHeaders });
 
     expect(response.json<PickFolderResponse>()).toEqual({ path: null });
