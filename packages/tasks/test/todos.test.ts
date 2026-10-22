@@ -62,13 +62,13 @@ describe('findTodosInText', () => {
 });
 
 describe('todoToTask', () => {
-  it('builds a task in Spanish with the location', () => {
+  it('builds a task with the location', () => {
     const task = todoToTask({ path: 'src/app.ts', line: 12, marker: 'FIXME', text: 'handle errors' });
 
     expect(task).toMatchObject({
       source: 'static',
       title: 'FIXME: handle errors',
-      description: 'Comentario FIXME en src/app.ts:12: "handle errors".',
+      description: 'FIXME comment in `src/app.ts:12`: "handle errors".',
       category: 'todo',
       priority: 'high',
       affectedFiles: ['src/app.ts'],
@@ -85,7 +85,7 @@ describe('todoToTask', () => {
     const a = todoToTask({ path: 'a.ts', line: 3, marker: 'TODO', text: '' });
     const b = todoToTask({ path: 'a.ts', line: 9, marker: 'TODO', text: '' });
     expect(a.fingerprint).not.toBe(b.fingerprint);
-    expect(a.title).toBe('TODO en a.ts:3');
+    expect(a.title).toBe('TODO in `a.ts:3`');
   });
 
   it('shortens very long titles', () => {

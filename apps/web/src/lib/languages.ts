@@ -6,7 +6,7 @@ export interface LanguageSlice {
 }
 
 /**
- * Keeps the `max` biggest languages and merges the rest into "Otros",
+ * Keeps the `max` biggest languages and merges the rest into "Other",
  * so the bar stays readable. Input is expected sorted (largest first).
  */
 export function groupLanguages(languages: LanguageStat[], max = 5): LanguageSlice[] {
@@ -16,5 +16,5 @@ export function groupLanguages(languages: LanguageStat[], max = 5): LanguageSlic
   if (rest.length === 0) return top;
 
   const otherPercent = Math.round(rest.reduce((sum, l) => sum + l.percent, 0) * 10) / 10;
-  return [...top, { language: 'Otros', percent: otherPercent }];
+  return [...top, { language: 'Other', percent: otherPercent }];
 }

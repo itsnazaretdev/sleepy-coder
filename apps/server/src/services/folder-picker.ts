@@ -46,7 +46,7 @@ interface PickerCommand {
   isCancel: (result: CommandResult) => boolean;
 }
 
-const PROMPT = 'Elige la carpeta raíz de un repositorio Git';
+const PROMPT = 'Choose the root folder of a Git repository';
 
 function commandFor(platform: NodeJS.Platform): PickerCommand | null {
   if (platform === 'darwin') {

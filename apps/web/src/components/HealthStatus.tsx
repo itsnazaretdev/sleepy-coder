@@ -37,15 +37,15 @@ export default function HealthStatus() {
         <h2 className={styles.title}>Backend</h2>
       </div>
 
-      {state.kind === 'loading' && <p className={styles.muted}>Comprobando…</p>}
+      {state.kind === 'loading' && <p className={styles.muted}>Checking…</p>}
 
       {state.kind === 'online' && (
         <dl className={styles.details}>
-          <dt>Estado</dt>
-          <dd>Conectado</dd>
-          <dt>Versión</dt>
+          <dt>Status</dt>
+          <dd>Connected</dd>
+          <dt>Version</dt>
           <dd>{state.data.version}</dd>
-          <dt>Activo desde hace</dt>
+          <dt>Uptime</dt>
           <dd>{formatUptime(state.data.uptime)}</dd>
         </dl>
       )}
@@ -53,10 +53,10 @@ export default function HealthStatus() {
       {state.kind === 'offline' && (
         <>
           <p className={styles.muted}>
-            No hay conexión. Arranca el servidor con <code>pnpm dev:server</code>.
+            Not connected. Start the server with <code>pnpm dev:server</code>.
           </p>
           <button type="button" className={styles.retry} onClick={() => void check()}>
-            Reintentar
+            Retry
           </button>
         </>
       )}

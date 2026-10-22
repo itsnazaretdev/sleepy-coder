@@ -12,13 +12,13 @@ describe('groupLanguages', () => {
     ]);
   });
 
-  it('merges the tail into "Otros"', () => {
+  it('merges the tail into "Other"', () => {
     const input = [stat('A', 50), stat('B', 30), stat('C', 10.1), stat('D', 6.2), stat('E', 3.7)];
 
     expect(groupLanguages(input, 2)).toEqual([
       { language: 'A', percent: 50 },
       { language: 'B', percent: 30 },
-      { language: 'Otros', percent: 20 },
+      { language: 'Other', percent: 20 },
     ]);
   });
 

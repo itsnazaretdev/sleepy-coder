@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Task } from '@sleepy-coder/shared';
-import { countByStatus, describeHunt, replaceTask } from '../src/lib/tasks';
+import { countByStatus, describeHunt, describeSuggestions, replaceTask } from '../src/lib/tasks';
 
 const task = (id: string, status: Task['status']): Task => ({
   id,
@@ -44,12 +44,23 @@ describe('replaceTask', () => {
 
 describe('describeHunt', () => {
   it.each([
-    [0, 0, 'No hay tareas nuevas.'],
-    [1, 0, '1 tarea nueva.'],
-    [3, 0, '3 tareas nuevas.'],
-    [2, 1, '2 tareas nuevas · 1 ya resuelta.'],
-    [0, 2, '2 ya resueltas.'],
+    [0, 0, 'No new tasks.'],
+    [1, 0, '1 new task.'],
+    [3, 0, '3 new tasks.'],
+    [2, 1, '2 new tasks · 1 already resolved.'],
+    [0, 2, '2 already resolved.'],
   ])('%i added, %i removed → %s', (added, removed, text) => {
     expect(describeHunt(added, removed)).toBe(text);
+  });
+});
+
+describe('describeSuggestions', () => {
+  it.each([
+    [0, 2, "Gemma didn't find any new improvements this time."],
+    [1, 0, 'Gemma suggests 1 new task.'],
+    [3, 1, 'Gemma suggests 3 new tasks (replacing 1 previous suggestion).'],
+    [2, 4, 'Gemma suggests 2 new tasks (replacing 4 previous suggestions).'],
+  ])('%i added, %i removed → %s', (added, removed, text) => {
+    expect(describeSuggestions(added, removed)).toBe(text);
   });
 });

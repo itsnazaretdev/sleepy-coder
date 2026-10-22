@@ -22,16 +22,16 @@ export default function RepositoryReportView({ report, onReanalyze, analyzing }:
           <code className={styles.path}>{report.repository.path}</code>
         </div>
         <button type="button" className={styles.button} onClick={onReanalyze} disabled={analyzing}>
-          {analyzing ? 'Analizando…' : 'Volver a analizar'}
+          {analyzing ? 'Analyzing…' : 'Analyze again'}
         </button>
       </header>
 
       <p className={styles.meta}>
-        Analizado el {formatDate(report.analyzedAt)} · {formatDuration(report.durationMs)}
+        Analyzed on {formatDate(report.analyzedAt)} · {formatDuration(report.durationMs)}
       </p>
 
       {report.warnings.length > 0 && (
-        <section className={styles.warnings} aria-label="Avisos">
+        <section className={styles.warnings} aria-label="Warnings">
           <ul>
             {report.warnings.map((code) => (
               <li key={code}>{WARNING_MESSAGES[code]}</li>
@@ -47,24 +47,24 @@ export default function RepositoryReportView({ report, onReanalyze, analyzing }:
         </section>
 
         <section className={styles.panel}>
-          <h3>Archivos</h3>
+          <h3>Files</h3>
           <dl className={styles.stats}>
-            <dt>Archivos</dt>
-            <dd>{report.files.total.toLocaleString('es-ES')}</dd>
-            <dt>Tamaño</dt>
+            <dt>Files</dt>
+            <dd>{report.files.total.toLocaleString('en-US')}</dd>
+            <dt>Size</dt>
             <dd>{formatBytes(report.files.totalBytes)}</dd>
             <dt>Tests</dt>
-            <dd>{report.files.testFiles.toLocaleString('es-ES')}</dd>
+            <dd>{report.files.testFiles.toLocaleString('en-US')}</dd>
           </dl>
         </section>
 
         <section className={`${styles.panel} ${styles.wide}`}>
-          <h3>Lenguajes</h3>
+          <h3>Languages</h3>
           {slices.length === 0 ? (
-            <p className={styles.muted}>No he encontrado código fuente.</p>
+            <p className={styles.muted}>No source code found.</p>
           ) : (
             <>
-              <div className={styles.bar} role="img" aria-label="Reparto de lenguajes">
+              <div className={styles.bar} role="img" aria-label="Language breakdown">
                 {slices.map((slice, index) => (
                   <span
                     key={slice.language}
@@ -77,7 +77,7 @@ export default function RepositoryReportView({ report, onReanalyze, analyzing }:
                   <li key={slice.language}>
                     <span className={styles.swatch} style={{ background: `var(--chart-${index + 1})` }} />
                     {slice.language}
-                    <span className={styles.muted}>{slice.percent.toLocaleString('es-ES')} %</span>
+                    <span className={styles.muted}>{slice.percent.toLocaleString('en-US')}%</span>
                   </li>
                 ))}
               </ul>
@@ -87,10 +87,10 @@ export default function RepositoryReportView({ report, onReanalyze, analyzing }:
 
         <section className={`${styles.panel} ${styles.wide}`}>
           <h3>Stack</h3>
-          <ChipRow label="Gestores de paquetes" items={report.packageManagers} />
+          <ChipRow label="Package managers" items={report.packageManagers} />
           <ChipRow label="Frameworks" items={report.frameworks} />
           <ChipRow label="Testing" items={report.testingTools} />
-          <ChipRow label="Configuración" items={report.configFiles} />
+          <ChipRow label="Configuration" items={report.configFiles} />
         </section>
       </div>
     </article>
@@ -100,21 +100,21 @@ export default function RepositoryReportView({ report, onReanalyze, analyzing }:
 function GitSummary({ git }: { git: GitInfo }) {
   return (
     <dl className={styles.stats}>
-      <dt>Rama</dt>
+      <dt>Branch</dt>
       <dd>
-        <code>{git.branch ?? 'HEAD separado'}</code>
+        <code>{git.branch ?? 'detached HEAD'}</code>
       </dd>
 
-      <dt>Estado</dt>
+      <dt>Status</dt>
       <dd className={git.isClean ? styles.ok : styles.warn}>
         {git.isClean
-          ? 'Limpio'
-          : `${git.changedFiles} modificados · ${git.untrackedFiles} sin seguimiento`}
+          ? 'Clean'
+          : `${git.changedFiles} modified · ${git.untrackedFiles} untracked`}
       </dd>
 
       {git.tracking && (
         <>
-          <dt>Remoto</dt>
+          <dt>Remote</dt>
           <dd>
             <code>{git.tracking}</code>
             {(git.ahead > 0 || git.behind > 0) && (
@@ -127,7 +127,7 @@ function GitSummary({ git }: { git: GitInfo }) {
         </>
       )}
 
-      <dt>Último commit</dt>
+      <dt>Last commit</dt>
       <dd>
         {git.lastCommit ? (
           <>
@@ -137,7 +137,7 @@ function GitSummary({ git }: { git: GitInfo }) {
             </span>
           </>
         ) : (
-          <span className={styles.muted}>Sin commits todavía</span>
+          <span className={styles.muted}>No commits yet</span>
         )}
       </dd>
     </dl>

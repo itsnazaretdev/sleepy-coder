@@ -7,7 +7,7 @@ function suggestTestTool(structure: StructureReport): string {
   if (languages.has('Java') || languages.has('Kotlin')) return 'JUnit 5';
   if (languages.has('Python')) return 'pytest';
   if (languages.has('PHP')) return 'PHPUnit';
-  return 'el framework de tests habitual del lenguaje';
+  return 'the usual test framework for the language';
 }
 
 /**
@@ -22,14 +22,14 @@ export function tasksFromStructure(structure: StructureReport): TaskDraft[] {
     tasks.push({
       fingerprint: 'report:no-tests',
       source: 'static',
-      title: 'Añadir los primeros tests',
-      description: 'El repositorio no tiene ningún archivo de test.',
+      title: 'Add the first tests',
+      description: 'The repository has no test files.',
       category: 'tests',
       priority: 'medium',
       complexity: 'medium',
       risk: 'low',
       affectedFiles: [],
-      suggestedImplementation: `Configura ${tool} y escribe tests para las funciones con más lógica, empezando por las más sencillas de aislar.`,
+      suggestedImplementation: `Set up ${tool} and write tests for the functions with the most logic, starting with the easiest ones to isolate.`,
     });
   }
 
@@ -37,15 +37,15 @@ export function tasksFromStructure(structure: StructureReport): TaskDraft[] {
     tasks.push({
       fingerprint: 'report:no-readme',
       source: 'static',
-      title: 'Crear un README',
-      description: 'No hay README en la raíz del repositorio.',
+      title: 'Create a README',
+      description: 'There is no README at the root of the repository.',
       category: 'documentation',
       priority: 'medium',
       complexity: 'small',
       risk: 'low',
       affectedFiles: ['README.md'],
       suggestedImplementation:
-        'Crea README.md con qué hace el proyecto, cómo instalarlo y ejecutarlo, y con qué tecnologías está hecho.',
+        'Create `README.md` explaining what the project does, how to install and run it, and which technologies it uses.',
     });
   }
 
@@ -53,15 +53,15 @@ export function tasksFromStructure(structure: StructureReport): TaskDraft[] {
     tasks.push({
       fingerprint: 'report:no-license',
       source: 'static',
-      title: 'Añadir una licencia',
-      description: 'No hay archivo LICENSE. Sin licencia, nadie puede reutilizar el código legalmente.',
+      title: 'Add a license',
+      description: 'There is no LICENSE file. Without a license, nobody can legally reuse the code.',
       category: 'documentation',
       priority: 'low',
       complexity: 'small',
       risk: 'low',
       affectedFiles: ['LICENSE'],
       suggestedImplementation:
-        'Elige una licencia (MIT es la más común para proyectos personales) y añade el texto en un archivo LICENSE.',
+        'Choose a license (MIT is the most common one for personal projects) and add its text in a `LICENSE` file.',
     });
   }
 

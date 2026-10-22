@@ -46,8 +46,8 @@ describe('POST /repositories/:id/tasks/hunt', () => {
     expect(body.added).toBe(3);
     expect(body.tasks.map((t) => t.title)).toEqual([
       'FIXME: handle errors',
-      'Añadir los primeros tests',
-      'Añadir una licencia',
+      'Add the first tests',
+      'Add a license',
     ]);
     expect(body.tasks.every((t) => t.status === 'pending' && t.repositoryId === repoId)).toBe(true);
   });

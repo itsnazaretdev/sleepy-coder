@@ -87,11 +87,16 @@ export function createOllamaClient(options: OllamaClientOptions = {}): OllamaCli
     },
 
     async chat(req: ChatRequest): Promise<ChatResult> {
+      const options: Record<string, number> = {};
+      if (req.temperature !== undefined) options.temperature = req.temperature;
+      if (req.numCtx !== undefined) options.num_ctx = req.numCtx;
+
       const body = {
         model: req.model,
         messages: req.messages,
         stream: false,
-        ...(req.temperature !== undefined && { options: { temperature: req.temperature } }),
+        ...(req.format !== undefined && { format: req.format }),
+        ...(Object.keys(options).length > 0 && { options }),
       };
 
       const data = await request<RawChatResponse>(

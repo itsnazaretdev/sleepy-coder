@@ -4,19 +4,19 @@ import HealthStatus from '../components/HealthStatus.tsx';
 import OllamaStatus from '../components/OllamaStatus.tsx';
 
 const placeholders = [
-  { title: 'Tareas aprobadas', text: 'Aquí aparecerán las tareas listas para ejecutar.', phase: 'Fase 4' },
-  { title: 'Sesiones recientes', text: 'Historial de Work Sessions y sus informes.', phase: 'Fase 6' },
+  { title: 'Approved tasks', text: 'Tasks ready to run will show up here.', phase: 'Phase 6' },
+  { title: 'Recent sessions', text: 'History of Work Sessions and their reports.', phase: 'Phase 6' },
 ];
 ---
 
-<Layout title="Panel">
+<Layout title="Dashboard">
   <header class="page-header">
     <div>
-      <h1>Panel</h1>
-      <p class="subtitle">Tu asistente de código local. Trabaja cuando tú decides.</p>
+      <h1>Dashboard</h1>
+      <p class="subtitle">Your local coding assistant. It works when you decide.</p>
     </div>
-    <button class="primary" type="button" disabled title="Disponible en la Fase 6">
-      Iniciar Work Session
+    <button class="primary" type="button" disabled title="Available in Phase 6">
+      Start Work Session
     </button>
   </header>
 
@@ -26,10 +26,10 @@ const placeholders = [
 
     <a class="card card-link" href="/repositories">
       <div class="card-head">
-        <h2>Repositorios</h2>
+        <h2>Repositories</h2>
         <span class="arrow" aria-hidden="true">→</span>
       </div>
-      <p>Añade un repositorio local y analiza su estructura, lenguajes y stack.</p>
+      <p>Add a local repository and analyze its structure, languages and stack.</p>
     </a>
 
     {

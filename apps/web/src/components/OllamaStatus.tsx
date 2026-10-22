@@ -45,7 +45,7 @@ export default function OllamaStatus() {
       const message =
         error instanceof ApiRequestError
           ? describeError(error.code)
-          : 'Sin respuesta del backend. ¿Sigue arrancado?';
+          : 'No answer from the backend. Is it still running?';
       setTest({ kind: 'error', message });
     }
   };
@@ -72,17 +72,17 @@ export default function OllamaStatus() {
         )}
       </div>
 
-      {status.kind === 'loading' && <p className={styles.muted}>Comprobando…</p>}
+      {status.kind === 'loading' && <p className={styles.muted}>Checking…</p>}
 
       {status.kind === 'backend-offline' && (
-        <p className={styles.muted}>Necesito el backend encendido para consultar Ollama.</p>
+        <p className={styles.muted}>The backend must be running to check Ollama.</p>
       )}
 
       {status.kind === 'ready' && !status.data.running && (
         <>
           <p className={styles.muted}>{describeError(status.data.errorCode)}</p>
           <button type="button" className={styles.button} onClick={() => void refresh()}>
-            Reintentar
+            Retry
           </button>
         </>
       )}
@@ -99,7 +99,7 @@ export default function OllamaStatus() {
                   <li key={m.name} className={selected ? styles.selected : undefined}>
                     <code>{m.name}</code>
                     <span className={styles.size}>{formatBytes(m.sizeBytes)}</span>
-                    {selected && <span className={styles.badge}>en uso</span>}
+                    {selected && <span className={styles.badge}>in use</span>}
                   </li>
                 );
               })}
@@ -108,7 +108,7 @@ export default function OllamaStatus() {
 
           {status.data.selectedModel && !status.data.selectedModelAvailable && (
             <p className={styles.warning}>
-              El modelo configurado <code>{status.data.selectedModel}</code> no está instalado.
+              The configured model <code>{status.data.selectedModel}</code> is not installed.
             </p>
           )}
 
@@ -120,11 +120,11 @@ export default function OllamaStatus() {
                 onClick={() => void runTest()}
                 disabled={test.kind === 'running'}
               >
-                {test.kind === 'running' ? 'Despertando al modelo…' : 'Probar modelo'}
+                {test.kind === 'running' ? 'Waking up the model…' : 'Test model'}
               </button>
 
               {test.kind === 'running' && (
-                <p className={styles.muted}>La primera vez puede tardar un poco mientras se carga en memoria.</p>
+                <p className={styles.muted}>The first time can take a while, as the model loads into memory.</p>
               )}
 
               {test.kind === 'done' && (

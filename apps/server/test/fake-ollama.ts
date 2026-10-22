@@ -1,4 +1,10 @@
-import { OllamaError, type OllamaClient, type OllamaErrorCode, type OllamaModel } from '@sleepy-coder/ollama';
+import {
+  OllamaError,
+  type ChatRequest,
+  type OllamaClient,
+  type OllamaErrorCode,
+  type OllamaModel,
+} from '@sleepy-coder/ollama';
 
 export const model = (name: string): OllamaModel => ({
   name,
@@ -16,9 +22,11 @@ interface FakeOptions {
   reply?: string;
 }
 
-/** In-memory OllamaClient for tests. Records which models were used in chat. */
+/** In-memory OllamaClient for tests. Records which models were used in chat, and the full requests. */
 export function fakeOllama(options: FakeOptions = {}) {
   const chatCalls: string[] = [];
+  const requests: ChatRequest[] = [];
+  let reply = options.reply ?? '¡Listo!';
   const fail = () => {
     if (options.failWith) throw new OllamaError(options.failWith, `fake ${options.failWith}`);
   };
@@ -36,9 +44,15 @@ export function fakeOllama(options: FakeOptions = {}) {
     async chat(req) {
       fail();
       chatCalls.push(req.model);
-      return { model: req.model, content: options.reply ?? '¡Listo!', durationMs: 850 };
+      requests.push(req);
+      return { model: req.model, content: reply, durationMs: 850 };
     },
   };
 
-  return { client, chatCalls };
+  /** Changes what the fake model answers from now on. */
+  const setReply = (next: string) => {
+    reply = next;
+  };
+
+  return { client, chatCalls, requests, setReply };
 }

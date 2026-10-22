@@ -10,17 +10,17 @@ const { title } = Astro.props;
 const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 
 const navItems = [
-  { href: '/', label: 'Panel' },
-  { href: '/repositories', label: 'Repositorios' },
-  { href: '#', label: 'Tareas', soon: true },
-  { href: '#', label: 'Sesiones', soon: true },
-  { href: '#', label: 'Informes', soon: true },
-  { href: '#', label: 'Ajustes', soon: true },
+  { href: '/', label: 'Dashboard' },
+  { href: '/repositories', label: 'Repositories' },
+  { href: '#', label: 'Tasks', soon: true },
+  { href: '#', label: 'Sessions', soon: true },
+  { href: '#', label: 'Reports', soon: true },
+  { href: '#', label: 'Settings', soon: true },
 ];
 ---
 
 <!doctype html>
-<html lang="es">
+<html lang="en">
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -45,7 +45,7 @@ const navItems = [
                     aria-disabled={item.soon ? 'true' : undefined}
                   >
                     {item.label}
-                    {item.soon && <span class="soon-tag">pronto</span>}
+                    {item.soon && <span class="soon-tag">soon</span>}
                   </a>
                 </li>
               ))

@@ -21,6 +21,13 @@ export interface ChatRequest {
   messages: ChatMessage[];
   /** Sampling temperature. Lower = more deterministic. */
   temperature?: number;
+  /**
+   * Forces the shape of the answer: "json" for any JSON, or a JSON Schema object
+   * (Ollama "structured outputs"). The answer is still a string: parse and validate it.
+   */
+  format?: 'json' | Record<string, unknown>;
+  /** Context window in tokens. Ollama's default is small; long prompts need more. */
+  numCtx?: number;
   /** Overrides the client timeout for this call (models can be slow to load). */
   timeoutMs?: number;
 }

@@ -103,6 +103,17 @@ describe('createOllamaClient', () => {
     });
   });
 
+  it('chat sends the JSON schema and the context size when given', async () => {
+    const { fn, calls } = fakeFetch(() => json({ message: { content: '{"tasks":[]}' } }));
+    const schema = { type: 'object', properties: { tasks: { type: 'array' } } };
+
+    await createOllamaClient({ fetch: fn }).chat({ model: 'm', messages: [], format: schema, numCtx: 8192 });
+
+    const body = JSON.parse(String(calls[0]?.init?.body));
+    expect(body.format).toEqual(schema);
+    expect(body.options).toEqual({ num_ctx: 8192 });
+  });
+
   it('chat omits options when no temperature is given', async () => {
     const { fn, calls } = fakeFetch(() => json({ message: { content: 'ok' } }));
     await createOllamaClient({ fetch: fn }).chat({ model: 'm', messages: [] });

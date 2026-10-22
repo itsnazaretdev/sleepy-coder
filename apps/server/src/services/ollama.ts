@@ -40,13 +40,10 @@ export class NoModelError extends Error {
 }
 
 const TEST_PROMPT =
-  'Responde en una sola frase corta y en español: ¿estás listo para ayudar con tareas de programación?';
+  'Answer in one short sentence: are you ready to help with coding tasks?';
 
-/** Sends a tiny prompt to the selected model to check it really answers. */
-export async function runOllamaTest(
-  client: OllamaClient,
-  configuredModel: string | null,
-): Promise<OllamaTestResponse> {
+/** Returns the model to use, or throws NoModelError if none is installed. */
+export async function requireModel(client: OllamaClient, configuredModel: string | null): Promise<string> {
   const models = await client.listModels();
   const selection = selectModel(models, configuredModel);
 
@@ -56,9 +53,18 @@ export async function runOllamaTest(
   if (!selection.available) {
     throw new NoModelError(`Configured model "${selection.name}" is not installed.`);
   }
+  return selection.name;
+}
+
+/** Sends a tiny prompt to the selected model to check it really answers. */
+export async function runOllamaTest(
+  client: OllamaClient,
+  configuredModel: string | null,
+): Promise<OllamaTestResponse> {
+  const model = await requireModel(client, configuredModel);
 
   const result = await client.chat({
-    model: selection.name,
+    model,
     messages: [{ role: 'user', content: TEST_PROMPT }],
     temperature: 0.2,
   });

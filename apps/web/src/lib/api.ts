@@ -118,6 +118,15 @@ export function huntTasks(repositoryId: string): Promise<HuntResponse> {
   );
 }
 
+/** Asks the local model for improvement tasks. Slow: the model reads part of the code. */
+export function suggestTasks(repositoryId: string): Promise<HuntResponse> {
+  return request<HuntResponse>(
+    `/repositories/${encodeURIComponent(repositoryId)}/tasks/suggest`,
+    { method: 'POST' },
+    200_000, // the backend gives the model up to 3 minutes
+  );
+}
+
 export function updateTaskStatus(id: string, status: TaskStatus): Promise<Task> {
   const body: UpdateTaskRequest = { status };
   return request<Task>(`/tasks/${encodeURIComponent(id)}`, {

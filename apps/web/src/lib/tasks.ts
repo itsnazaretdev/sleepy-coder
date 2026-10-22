@@ -1,31 +1,31 @@
 import type { Task, TaskCategory, TaskComplexity, TaskLevel, TaskStatus } from '@sleepy-coder/shared';
 
-/** Spanish labels for the task fields shown in the UI. */
+/** Labels for the task fields shown in the UI. */
 
 export const CATEGORY_LABELS: Record<TaskCategory, string> = {
   todo: 'TODO',
   tests: 'Tests',
-  documentation: 'Documentación',
+  documentation: 'Documentation',
   refactor: 'Refactor',
-  maintenance: 'Mantenimiento',
+  maintenance: 'Maintenance',
 };
 
 export const LEVEL_LABELS: Record<TaskLevel, string> = {
-  low: 'baja',
-  medium: 'media',
-  high: 'alta',
+  low: 'Low',
+  medium: 'Medium',
+  high: 'High',
 };
 
 export const COMPLEXITY_LABELS: Record<TaskComplexity, string> = {
-  small: 'pequeña',
-  medium: 'media',
-  large: 'grande',
+  small: 'Small',
+  medium: 'Medium',
+  large: 'Large',
 };
 
 export const STATUS_LABELS: Record<TaskStatus, string> = {
-  pending: 'Pendientes',
-  approved: 'Aprobadas',
-  discarded: 'Descartadas',
+  pending: 'Pending',
+  approved: 'Approved',
+  discarded: 'Discarded',
 };
 
 export const STATUS_ORDER: TaskStatus[] = ['pending', 'approved', 'discarded'];
@@ -41,11 +41,21 @@ export function replaceTask(tasks: Task[], updated: Task): Task[] {
   return tasks.map((task) => (task.id === updated.id ? updated : task));
 }
 
+const plural = (count: number, one: string, many: string) => `${count} ${count === 1 ? one : many}`;
+
 /** Short sentence describing what a hunt changed. */
 export function describeHunt(added: number, removed: number): string {
-  if (added === 0 && removed === 0) return 'No hay tareas nuevas.';
+  if (added === 0 && removed === 0) return 'No new tasks.';
   const parts: string[] = [];
-  if (added > 0) parts.push(added === 1 ? '1 tarea nueva' : `${added} tareas nuevas`);
-  if (removed > 0) parts.push(removed === 1 ? '1 ya resuelta' : `${removed} ya resueltas`);
+  if (added > 0) parts.push(plural(added, 'new task', 'new tasks'));
+  if (removed > 0) parts.push(`${removed} already resolved`);
   return `${parts.join(' · ')}.`;
+}
+
+/** Same as describeHunt, for AI suggestions (old pending suggestions are replaced, not "resolved"). */
+export function describeSuggestions(added: number, removed: number): string {
+  if (added === 0) return "Gemma didn't find any new improvements this time.";
+  const found = `Gemma suggests ${plural(added, 'new task', 'new tasks')}`;
+  const replaced = removed > 0 ? ` (replacing ${plural(removed, 'previous suggestion', 'previous suggestions')})` : '';
+  return `${found}${replaced}.`;
 }

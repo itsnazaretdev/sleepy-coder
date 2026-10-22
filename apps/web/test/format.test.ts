@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { formatBytes, formatDuration, formatUptime } from '../src/lib/format';
+import { formatBytes, formatDate, formatDuration, formatUptime } from '../src/lib/format';
 
 describe('formatUptime', () => {
   it('formats seconds only', () => {
@@ -30,9 +30,9 @@ describe('formatBytes', () => {
     expect(formatBytes(512)).toBe('512 B');
   });
 
-  it('uses one decimal below 10 units, with a Spanish comma', () => {
-    expect(formatBytes(3_338_801_804)).toBe('3,3 GB');
-    expect(formatBytes(1_929_912_432)).toBe('1,9 GB');
+  it('uses one decimal below 10 units', () => {
+    expect(formatBytes(3_338_801_804)).toBe('3.3 GB');
+    expect(formatBytes(1_929_912_432)).toBe('1.9 GB');
   });
 
   it('rounds to whole numbers from 10 units up', () => {
@@ -45,11 +45,29 @@ describe('formatBytes', () => {
 });
 
 describe('formatDuration', () => {
-  it('formats milliseconds as seconds', () => {
-    expect(formatDuration(1234)).toBe('1,2 s');
+  it('shows milliseconds under one second', () => {
+    expect(formatDuration(0)).toBe('0 ms');
+    expect(formatDuration(42.4)).toBe('42 ms');
+    expect(formatDuration(999)).toBe('999 ms');
+  });
+
+  it('shows seconds with one decimal from one second up', () => {
+    expect(formatDuration(1234)).toBe('1.2 s');
+    expect(formatDuration(65_000)).toBe('65.0 s');
   });
 
   it('returns a dash for null', () => {
     expect(formatDuration(null)).toBe('—');
+  });
+});
+
+describe('formatDate', () => {
+  it('formats a valid ISO date in English', () => {
+    expect(formatDate('2026-10-21T10:00:00.000Z')).toContain('2026');
+    expect(formatDate('2026-10-21T10:00:00.000Z')).toContain('Oct');
+  });
+
+  it('returns a dash for an invalid date', () => {
+    expect(formatDate('not a date')).toBe('—');
   });
 });

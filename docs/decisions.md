@@ -149,5 +149,23 @@ no longer appear are removed. Approved and discarded tasks are never touched by 
 **Why:** Re-running a hunt must be safe and predictable: no duplicates, and a human decision
 (approve/discard) is never undone automatically. AI suggestions (Phase 4b) will use the same
 mechanism with `source = 'ai'`.
+
+## ADR-017 — AI task suggestions: small context, strict schema, distrust the output
+
+**Decision:** `POST /repositories/:id/tasks/suggest` sends the local model a summary of the
+repository, a list of source files and excerpts of the biggest non-test source files, with a
+hard budget (~12,000 characters of code, ≈5k tokens in total) and `num_ctx = 8192`. The answer is
+constrained with Ollama structured outputs (a JSON Schema), and then validated again:
+invalid tasks are skipped, unknown enum values get safe defaults, files that do not exist are
+removed, repeated or already known titles are dropped and at most 5 tasks are kept.
+The prompt lists existing tasks so the model does not repeat them. Only one suggestion runs
+at a time. The `tasks` package talks to a provider-agnostic `TaskModel`; the server adapts Ollama.
+
+The model answers in English and wraps code names in backticks, which the UI renders as code.
+
+**Why:** A 4B model on a laptop has a small context window and sometimes invents files or
+fields. Keeping the input small makes it faster and more focused; treating the output as
+untrusted keeps bad suggestions out of the database. Pending AI tasks are replaced on each run
+(their titles change from run to run), while approved and discarded ones are kept.
 Tree-sitter is kept for Phase 4/5, where real code parsing (functions, TODOs in context)
 is needed.

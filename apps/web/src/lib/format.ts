@@ -1,5 +1,5 @@
 /**
- * Formats a number of seconds as a short, human-readable duration in Spanish.
+ * Formats a number of seconds as a short, human-readable duration.
  * Examples: 42 → "42 s", 125 → "2 min 5 s", 3725 → "1 h 2 min".
  */
 export function formatUptime(totalSeconds: number): string {
@@ -19,7 +19,7 @@ export function formatUptime(totalSeconds: number): string {
 
 /**
  * Formats a byte count using decimal units, like `ollama list` does.
- * Examples: 512 → "512 B", 1_900_000_000 → "1,9 GB".
+ * Examples: 512 → "512 B", 1_900_000_000 → "1.9 GB".
  */
 export function formatBytes(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes < 0) return '—';
@@ -36,22 +36,23 @@ export function formatBytes(bytes: number): string {
   }
 
   const rounded = value < 10 ? value.toFixed(1) : Math.round(value).toString();
-  return `${rounded.replace('.', ',')} ${unit}`;
+  return `${rounded} ${unit}`;
 }
 
-const dateFormatter = new Intl.DateTimeFormat('es-ES', { dateStyle: 'medium', timeStyle: 'short' });
+const dateFormatter = new Intl.DateTimeFormat('en-US', { dateStyle: 'medium', timeStyle: 'short' });
 
-/** Formats an ISO date in Spanish, e.g. "21 oct 2026, 18:30". */
+/** Formats an ISO date, e.g. "Oct 21, 2026, 6:30 PM". */
 export function formatDate(iso: string): string {
   const date = new Date(iso);
   return Number.isNaN(date.getTime()) ? '—' : dateFormatter.format(date);
 }
 
 /**
- * Formats milliseconds as seconds with one decimal, Spanish style.
- * Example: 1234 → "1,2 s".
+ * Formats a duration in milliseconds.
+ * Under a second it shows milliseconds ("42 ms"), otherwise seconds with one decimal ("1.2 s").
  */
 export function formatDuration(ms: number | null): string {
   if (ms === null || !Number.isFinite(ms) || ms < 0) return '—';
-  return `${(ms / 1000).toFixed(1).replace('.', ',')} s`;
+  if (ms < 1000) return `${Math.round(ms)} ms`;
+  return `${(ms / 1000).toFixed(1)} s`;
 }

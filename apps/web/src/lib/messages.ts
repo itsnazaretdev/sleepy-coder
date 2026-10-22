@@ -1,37 +1,41 @@
 import type { ReportWarningCode } from '@sleepy-coder/shared';
 
-/** User-facing (Spanish) explanations for backend error codes. */
+/** User-facing explanations for backend error codes. */
 const ERROR_MESSAGES: Record<string, string> = {
   // Ollama
-  unreachable: 'Ollama no está encendido. Abre la app de Ollama o ejecuta "ollama serve".',
-  timeout: 'Ollama tardó demasiado en responder. Puede que el modelo siga cargando; inténtalo otra vez.',
-  'model-not-found': 'El modelo configurado no está instalado en Ollama.',
-  'bad-response': 'Ollama respondió con un error inesperado.',
-  'no-model': 'No hay ningún modelo disponible. Instala uno con "ollama pull gemma3:4b".',
+  unreachable: 'Ollama is not running. Open the Ollama app or run "ollama serve".',
+  timeout: 'Ollama took too long to answer. The model may still be loading; try again.',
+  'model-not-found': 'The configured model is not installed in Ollama.',
+  'bad-response': 'Ollama answered with an unexpected error.',
+  'no-model': 'No model available. Install one with "ollama pull gemma3:4b".',
 
   // Repositories
-  'invalid-path': 'Escribe una ruta absoluta, por ejemplo /Users/tu-usuario/Proyectos/mi-app.',
-  'not-found': 'No encuentro esa carpeta. Comprueba la ruta.',
-  'not-a-directory': 'Esa ruta es un archivo, no una carpeta.',
-  'not-a-git-repo': 'Esa carpeta no es la raíz de un repositorio Git (le falta la carpeta .git).',
-  'already-added': 'Ese repositorio ya está en la lista.',
-  'repository-not-found': 'Ese repositorio ya no está en la lista.',
-  'task-not-found': 'Esa tarea ya no existe. Vuelve a buscar tareas.',
+  'invalid-path': 'Type an absolute path, for example /Users/you/Projects/my-app.',
+  'not-found': "That folder doesn't exist. Check the path.",
+  'not-a-directory': 'That path is a file, not a folder.',
+  'not-a-git-repo': 'That folder is not the root of a Git repository (it has no .git folder).',
+  'already-added': 'That repository is already in the list.',
+  'repository-not-found': 'That repository is no longer in the list.',
+
+  // Tasks
+  'task-not-found': 'That task no longer exists. Look for tasks again.',
+  'ai-busy': 'Gemma is already working on other suggestions. Wait for it to finish.',
+  'ai-invalid-output': "The model answered with something I couldn't understand. Try again.",
 
   // Folder picker
-  'unsupported-platform': 'En este sistema no puedo abrir el selector de carpetas. Escribe la ruta a mano.',
-  'picker-busy': 'Ya hay una ventana de selección abierta. Búscala, puede estar detrás del navegador.',
-  'picker-failed': 'No se pudo abrir el selector de carpetas. Prueba a escribir la ruta a mano.',
+  'unsupported-platform': "The folder picker isn't available on this system. Type the path instead.",
+  'picker-busy': 'A folder window is already open. Look for it; it may be behind the browser.',
+  'picker-failed': "The folder picker couldn't be opened. Try typing the path instead.",
 };
 
 export function describeError(code: string): string {
-  return ERROR_MESSAGES[code] ?? 'Algo ha fallado al hablar con el backend.';
+  return ERROR_MESSAGES[code] ?? 'Something went wrong while talking to the backend.';
 }
 
 export const WARNING_MESSAGES: Record<ReportWarningCode, string> = {
-  'uncommitted-changes': 'Hay cambios sin commitear. Guárdalos antes de que el agente trabaje en este repositorio.',
-  'no-tests': 'No he encontrado archivos de test.',
-  'no-readme': 'No hay README en la raíz.',
-  'no-license': 'No hay archivo LICENSE.',
-  'scan-truncated': 'El repositorio es muy grande: solo se analizaron los primeros 20.000 archivos.',
+  'uncommitted-changes': 'There are uncommitted changes. Commit them before the agent works on this repository.',
+  'no-tests': 'No test files found.',
+  'no-readme': 'There is no README at the root.',
+  'no-license': 'There is no LICENSE file.',
+  'scan-truncated': 'The repository is very large: only the first 20,000 files were analyzed.',
 };

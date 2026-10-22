@@ -92,22 +92,22 @@ const PRIORITY_BY_MARKER: Record<TodoMarker, TaskLevel> = {
 const shorten = (text: string, max = 80) => (text.length > max ? `${text.slice(0, max - 1)}…` : text);
 
 export function todoToTask(todo: TodoComment): TaskDraft {
-  const where = `${todo.path}:${todo.line}`;
-  const quoted = todo.text ? `"${todo.text}"` : 'sin descripción';
+  const where = `\`${todo.path}:${todo.line}\``;
+  const quoted = todo.text ? `"${todo.text}"` : 'no description';
 
   return {
     // Uses the text, not the line, so the task survives code moving up or down.
     // Empty comments fall back to the line to stay unique.
     fingerprint: `todo:${todo.path}:${todo.marker}:${todo.text || `line-${todo.line}`}`,
     source: 'static',
-    title: todo.text ? `${todo.marker}: ${shorten(todo.text)}` : `${todo.marker} en ${where}`,
-    description: `Comentario ${todo.marker} en ${where}: ${quoted}.`,
+    title: todo.text ? `${todo.marker}: ${shorten(todo.text)}` : `${todo.marker} in ${where}`,
+    description: `${todo.marker} comment in ${where}: ${quoted}.`,
     category: 'todo',
     priority: PRIORITY_BY_MARKER[todo.marker],
     complexity: 'small',
     risk: 'low',
     affectedFiles: [todo.path],
     suggestedImplementation:
-      'Lee el código alrededor del comentario, haz lo que pide y borra el comentario cuando esté resuelto.',
+      'Read the code around the comment, do what it asks and remove the comment once it is done.',
   };
 }

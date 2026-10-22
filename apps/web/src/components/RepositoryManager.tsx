@@ -21,7 +21,7 @@ type AnalysisState =
   | { kind: 'done'; report: RepositoryReport }
   | { kind: 'error'; message: string };
 
-const OFFLINE_MESSAGE = 'Sin conexión con el backend. Arráncalo con "pnpm dev:server".';
+const OFFLINE_MESSAGE = 'No connection to the backend. Start it with "pnpm dev:server".';
 
 function errorMessage(error: unknown): string {
   return error instanceof ApiRequestError ? describeError(error.code) : OFFLINE_MESSAGE;
@@ -149,7 +149,7 @@ export default function RepositoryManager() {
     <div className={styles.layout}>
       <aside className={styles.sidebar}>
         <div className={styles.form}>
-          <h2 className={styles.formTitle}>Añadir repositorio</h2>
+          <h2 className={styles.formTitle}>Add repository</h2>
 
           <button
             type="button"
@@ -157,53 +157,53 @@ export default function RepositoryManager() {
             onClick={() => void handlePick()}
             disabled={busy !== 'idle'}
           >
-            {busy === 'picking' ? 'Esperando al Finder…' : busy === 'adding' ? 'Comprobando…' : 'Elegir carpeta…'}
+            {busy === 'picking' ? 'Waiting for Finder…' : busy === 'adding' ? 'Checking…' : 'Choose folder…'}
           </button>
 
           {busy === 'picking' && (
             <p className={styles.hint}>
-              Se ha abierto una ventana del Finder. Si no la ves, puede estar detrás del navegador.
+              A Finder window has opened. If you can't see it, it may be behind the browser.
             </p>
           )}
 
           {addError && <p className={styles.error}>{addError}</p>}
 
           <details className={styles.manual}>
-            <summary>O escribe la ruta a mano</summary>
+            <summary>Or type the path</summary>
             <form className={styles.manualForm} onSubmit={(e) => void handleSubmit(e)}>
               <input
                 type="text"
                 value={path}
                 onChange={(e) => setPath(e.target.value)}
-                placeholder="~/Desktop/mi-app"
-                aria-label="Ruta del repositorio"
+                placeholder="~/Desktop/my-app"
+                aria-label="Repository path"
                 spellCheck={false}
                 autoComplete="off"
                 disabled={busy !== 'idle'}
               />
               <button type="submit" className={styles.secondary} disabled={busy !== 'idle' || !path.trim()}>
-                Añadir
+                Add
               </button>
             </form>
           </details>
         </div>
 
         <div className={styles.listBlock}>
-          <h2>Tus repositorios</h2>
+          <h2>Your repositories</h2>
 
-          {list.kind === 'loading' && <p className={styles.muted}>Cargando…</p>}
+          {list.kind === 'loading' && <p className={styles.muted}>Loading…</p>}
 
           {list.kind === 'error' && (
             <>
               <p className={styles.error}>{OFFLINE_MESSAGE}</p>
               <button type="button" className={styles.secondary} onClick={() => void loadList()}>
-                Reintentar
+                Retry
               </button>
             </>
           )}
 
           {list.kind === 'ready' && repositories.length === 0 && (
-            <p className={styles.muted}>Aún no has añadido ninguno.</p>
+            <p className={styles.muted}>You haven't added any yet.</p>
           )}
 
           {repositories.length > 0 && (
@@ -218,8 +218,8 @@ export default function RepositoryManager() {
                     type="button"
                     className={styles.remove}
                     onClick={() => void handleRemove(repository)}
-                    title="Quitar de la lista (no borra nada del disco)"
-                    aria-label={`Quitar ${repository.name} de la lista`}
+                    title="Remove from the list (nothing is deleted from disk)"
+                    aria-label={`Remove ${repository.name} from the list`}
                   >
                     ×
                   </button>
@@ -233,20 +233,20 @@ export default function RepositoryManager() {
       <section className={styles.main}>
         {!selectedId && (
           <div className={styles.empty}>
-            <p>Elige un repositorio para ver su análisis.</p>
-            <p className={styles.muted}>El análisis es de solo lectura: no modifica nada.</p>
+            <p>Choose a repository to see its analysis.</p>
+            <p className={styles.muted}>The analysis is read-only: it never changes anything.</p>
           </div>
         )}
 
         {selectedId && analysis.kind === 'loading' && !shownReport && (
-          <p className={styles.muted}>Analizando repositorio…</p>
+          <p className={styles.muted}>Analyzing repository…</p>
         )}
 
         {selectedId && analysis.kind === 'error' && (
           <div className={styles.empty}>
             <p className={styles.error}>{analysis.message}</p>
             <button type="button" className={styles.secondary} onClick={() => void runAnalysis(selectedId)}>
-              Reintentar
+              Retry
             </button>
           </div>
         )}

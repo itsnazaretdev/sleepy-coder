@@ -66,7 +66,7 @@ export async function buildApp(options: BuildAppOptions = {}): Promise<FastifyIn
   await app.register(healthRoutes);
   await app.register(ollamaRoutes, { client: ollama, configuredModel: config.model });
   await app.register(repositoryRoutes, { store, git });
-  await app.register(taskRoutes, { store, git, tasks });
+  await app.register(taskRoutes, { store, git, tasks, ollama, configuredModel: config.model });
   await app.register(systemRoutes, { folderPicker });
 
   return app;

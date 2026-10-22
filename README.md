@@ -13,7 +13,8 @@ No cloud, no paid APIs: your code, your data, your machine.
 
 🚧 Phase 4 — Task Hunter. Add a local repository and Sleepy Coder shows its languages,
 frameworks, testing tools and Git status, then finds tasks (TODO/FIXME comments, missing
-tests, README or LICENSE) that you can approve or discard. AI-suggested tasks are next.
+tests, README or LICENSE) and asks the local model (Gemma) for improvement ideas. You approve
+or discard each task. Next: the agent that carries out approved tasks.
 See the roadmap in [`docs/brief.md`](docs/brief.md).
 
 ## Requirements
@@ -61,6 +62,7 @@ SLEEPY_MODEL=qwen2.5:3b pnpm dev
 | GET | `/repositories/:id/analysis` | Read-only analysis: languages, stack, Git status, warnings |
 | GET | `/repositories/:id/tasks` | Tasks of a repository (`?status=pending\|approved\|discarded`) |
 | POST | `/repositories/:id/tasks/hunt` | Looks for new tasks (no AI) |
+| POST | `/repositories/:id/tasks/suggest` | Asks the local model for improvement tasks (can take 1–2 min) |
 | PATCH | `/tasks/:id` | Approve, discard or reset a task: `{ "status": "approved" }` |
 | POST | `/system/pick-folder` | Opens the native folder dialog (Finder on macOS, zenity on Linux) |
 
