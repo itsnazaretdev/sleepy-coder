@@ -19,8 +19,15 @@ const ERROR_MESSAGES: Record<string, string> = {
 
   // Tasks
   'task-not-found': 'That task no longer exists. Look for tasks again.',
-  'ai-busy': 'Gemma is already working on other suggestions. Wait for it to finish.',
+  'ai-busy': 'Gemma is already working on another request. Wait for it to finish.',
+  'task-not-checkable': 'Tasks suggested by AI cannot be checked automatically. Mark it as done yourself.',
   'ai-invalid-output': "The model answered with something I couldn't understand. Try again.",
+
+  // Agent runs
+  'task-not-approved': 'Approve the task before running it.',
+  'agent-disabled': 'The autonomous agent is experimental and turned off (SLEEPY_EXPERIMENTAL_AGENT=1 enables it).',
+  'agent-busy': 'The agent is already working on another task. Wait for it to finish.',
+  'run-not-found': 'That run no longer exists.',
 
   // Folder picker
   'unsupported-platform': "The folder picker isn't available on this system. Type the path instead.",

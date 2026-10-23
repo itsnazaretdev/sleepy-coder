@@ -41,6 +41,48 @@ const MIGRATIONS: string[] = [
 
   CREATE INDEX tasks_by_repository ON tasks (repository_id, status);
   `,
+
+  // 2 — agent runs
+  `
+  CREATE TABLE task_runs (
+    id             TEXT PRIMARY KEY,
+    task_id        TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    repository_id  TEXT NOT NULL REFERENCES repositories(id) ON DELETE CASCADE,
+    status         TEXT NOT NULL,
+    branch         TEXT,
+    base_commit    TEXT,
+    commit_hash    TEXT,
+    summary        TEXT,
+    files          TEXT NOT NULL DEFAULT '[]',
+    diff           TEXT,
+    tests_before   TEXT,
+    tests_after    TEXT,
+    steps          TEXT NOT NULL DEFAULT '[]',
+    error          TEXT,
+    started_at     TEXT NOT NULL,
+    finished_at    TEXT
+  );
+
+  CREATE INDEX task_runs_by_task ON task_runs (task_id, started_at);
+  CREATE INDEX task_runs_by_repository ON task_runs (repository_id, started_at);
+  `,
+
+  // 3 — fix guides written by the model (one per task, the latest)
+  `
+  CREATE TABLE task_guides (
+    task_id      TEXT PRIMARY KEY REFERENCES tasks(id) ON DELETE CASCADE,
+    explanation  TEXT NOT NULL,
+    steps        TEXT NOT NULL DEFAULT '[]',
+    suggestions  TEXT NOT NULL DEFAULT '[]',
+    model        TEXT NOT NULL,
+    created_at   TEXT NOT NULL
+  );
+  `,
+
+  // 4 — the model can say a task does not apply (AI suggestions can be wrong)
+  `
+  ALTER TABLE task_guides ADD COLUMN applies INTEGER NOT NULL DEFAULT 1;
+  `,
 ];
 
 export type Database = DatabaseSync;

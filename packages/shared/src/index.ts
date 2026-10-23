@@ -154,10 +154,16 @@ export interface AddRepositoryRequest {
 
 // --- Tasks ------------------------------------------------------------------
 
-export type TaskCategory = 'todo' | 'tests' | 'documentation' | 'refactor' | 'maintenance';
+export type TaskCategory = 'todo' | 'tests' | 'documentation' | 'refactor' | 'maintenance' | 'seo';
 export type TaskLevel = 'low' | 'medium' | 'high';
 export type TaskComplexity = 'small' | 'medium' | 'large';
-export type TaskStatus = 'pending' | 'approved' | 'discarded';
+/**
+ * - pending: waiting for review
+ * - approved: the user wants to fix it
+ * - done: fixed (checked again by the rules, or marked by the user)
+ * - discarded: not worth doing
+ */
+export type TaskStatus = 'pending' | 'approved' | 'done' | 'discarded';
 /** "static" = found by rules (no AI), "ai" = suggested by the local model. */
 export type TaskSource = 'static' | 'ai';
 
@@ -195,6 +201,122 @@ export interface HuntResponse {
 
 export interface UpdateTaskRequest {
   status: TaskStatus;
+}
+
+// --- Fix guides -------------------------------------------------------------
+
+/** Where a task's problem is, read from the repository right now (no AI). */
+export interface CodeLocation {
+  /** Relative to the repository root. */
+  path: string;
+  /** Absolute path, for "Open in editor". */
+  absolutePath: string;
+  /** 1-based line of the problem. Null when no exact line is known (or the file does not exist yet). */
+  line: number | null;
+  /** False when the task is to create this file. */
+  exists: boolean;
+  /** Short label: "Extra `<h1>`", "`<img>` without `alt`", "File to create"… */
+  note: string;
+  /** A few lines around the problem, exactly as they are in the file. Empty if there is no line. */
+  snippet: string;
+  /** Line number of the first line of the snippet. */
+  snippetStart: number;
+}
+
+export interface CodeSuggestion {
+  path: string;
+  /** Suggested code written by the model. It may be wrong: the user reviews it. */
+  code: string;
+}
+
+/** Explanation written by the local model. Nothing is applied: the user makes the change. */
+export interface FixGuide {
+  taskId: string;
+  /** False when the model, looking at the real code, says the task's problem is not there. */
+  applies: boolean;
+  explanation: string;
+  steps: string[];
+  suggestions: CodeSuggestion[];
+  model: string;
+  /** ISO 8601 timestamp. */
+  createdAt: string;
+}
+
+export interface TaskGuideResponse {
+  task: Task;
+  locations: CodeLocation[];
+  /** Null until the user asks the model for one. */
+  guide: FixGuide | null;
+}
+
+export interface CheckTaskResponse {
+  task: Task;
+  /** True when the rule that found the task no longer finds it (the task is now "done"). */
+  fixed: boolean;
+  /** Where the problem still is, when it is not fixed. */
+  locations: CodeLocation[];
+}
+
+export interface AppConfigResponse {
+  /** The autonomous agent ("Run") is experimental and off unless SLEEPY_EXPERIMENTAL_AGENT=1. */
+  experimentalAgent: boolean;
+}
+
+// --- Agent runs -------------------------------------------------------------
+
+/**
+ * - running: the agent is working on it
+ * - completed: changes committed, tests passed (or the repo has no test script)
+ * - tests-failed: changes committed on the branch, but tests fail — review carefully
+ * - failed: nothing was committed (no valid change, model or Git error…)
+ * - interrupted: the backend stopped while it was running
+ */
+export type RunStatus = 'running' | 'completed' | 'tests-failed' | 'failed' | 'interrupted';
+
+export interface RunStep {
+  /** ISO 8601 timestamp. */
+  at: string;
+  message: string;
+}
+
+export interface RunFileChange {
+  path: string;
+  /** null for binary files. */
+  additions: number | null;
+  deletions: number | null;
+}
+
+export interface RunTestResult {
+  command: string;
+  passed: boolean;
+  timedOut: boolean;
+  durationMs: number;
+  /** Last part of the test output. */
+  output: string;
+}
+
+export interface TaskRun {
+  id: string;
+  taskId: string;
+  repositoryId: string;
+  status: RunStatus;
+  /** Agent branch, e.g. "sleepy/add-alt-text-1a2b3c4d". Null if it was never created. */
+  branch: string | null;
+  baseCommit: string | null;
+  /** Null when nothing was committed. */
+  commit: string | null;
+  /** What the agent says it did. */
+  summary: string | null;
+  files: RunFileChange[];
+  diff: string | null;
+  /** Tests before the agent touched anything. Null when the repo has no test script. */
+  testsBefore: RunTestResult | null;
+  /** Tests after the changes. */
+  testsAfter: RunTestResult | null;
+  steps: RunStep[];
+  error: string | null;
+  startedAt: string;
+  finishedAt: string | null;
 }
 
 // --- System -----------------------------------------------------------------

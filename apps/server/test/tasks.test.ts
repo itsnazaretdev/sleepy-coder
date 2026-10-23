@@ -34,7 +34,7 @@ afterEach(async () => {
 
 const hunt = (id = repoId) => app.inject({ method: 'POST', headers: clientHeaders, url: `/repositories/${id}/tasks/hunt` });
 const list = (query = '') => app.inject({ method: 'GET', url: `/repositories/${repoId}/tasks${query}` });
-const patch = (id: string, payload: unknown) =>
+const patch = (id: string, payload: Record<string, unknown>) =>
   app.inject({ method: 'PATCH', headers: clientHeaders, url: `/tasks/${id}`, payload });
 
 describe('POST /repositories/:id/tasks/hunt', () => {
@@ -113,7 +113,7 @@ describe('PATCH /tasks/:id', () => {
     await hunt();
     const [first] = (await list()).json<Task[]>();
 
-    expect((await patch(first!.id, { status: 'done' })).statusCode).toBe(400);
+    expect((await patch(first!.id, { status: 'finished' })).statusCode).toBe(400);
     const missing = await patch('00000000-0000-4000-8000-000000000000', { status: 'approved' });
     expect(missing.statusCode).toBe(404);
     expect(missing.json<ApiError>().error).toBe('task-not-found');

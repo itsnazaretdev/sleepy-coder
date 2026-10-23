@@ -14,6 +14,7 @@ export interface TaskStore {
    * Saves the drafts found by a hunt for one source:
    * - new fingerprints are inserted as "pending",
    * - existing ones keep their status (an approved task stays approved),
+   *   except static tasks marked "done" that are found again: they go back to "pending",
    * - pending tasks of that source that were not found again are removed.
    */
   sync(repositoryId: string, source: TaskSource, drafts: TaskDraft[]): SyncResult;
@@ -79,6 +80,8 @@ export function createSqliteTaskStore(db: Database, now: () => Date = () => new 
       priority, complexity, risk, affected_files, suggested_implementation, created_at, updated_at
     ) VALUES (?, ?, ?, ?, 'pending', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
   `);
+  // A static task marked "done" that a new hunt finds again has come back: review it again.
+  const reopen = db.prepare(`UPDATE tasks SET status = 'pending', updated_at = ? WHERE id = ? AND status = 'done'`);
   // Refreshes the text of tasks that are still waiting for review (e.g. line numbers changed).
   const refreshPending = db.prepare(`
     UPDATE tasks SET title = ?, description = ?, affected_files = ?, suggested_implementation = ?
@@ -118,6 +121,7 @@ export function createSqliteTaskStore(db: Database, now: () => Date = () => new 
           const current = existing.get(fingerprint);
 
           if (current) {
+            if (source === 'static' && current.status === 'done') reopen.run(timestamp, current.id);
             refreshPending.run(draft.title, draft.description, files, draft.suggestedImplementation, current.id);
             continue;
           }

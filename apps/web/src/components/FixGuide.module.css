@@ -1,0 +1,279 @@
+.panel {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-4);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+}
+
+.heading {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--color-text-muted);
+}
+
+.heading:not(:first-child) {
+  margin-top: var(--space-2);
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-danger);
+}
+
+/* Where */
+
+.locations {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--space-3);
+}
+
+.location {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.locationHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.path {
+  color: var(--color-accent);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  overflow-wrap: anywhere;
+}
+
+.note {
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-sm);
+  background: rgb(248 113 113 / 0.12);
+  color: var(--color-danger);
+  font-size: 0.75rem;
+}
+
+.create {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+
+.open {
+  margin-left: auto;
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.open:hover {
+  color: var(--color-accent);
+}
+
+.snippet {
+  margin: 0;
+  padding: var(--space-2) 0;
+  overflow-x: auto;
+  background: var(--color-surface);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.snippet > span {
+  display: block;
+  padding-right: var(--space-3);
+  white-space: pre;
+}
+
+.highlight {
+  background: rgb(248 113 113 / 0.12);
+  box-shadow: inset 3px 0 0 var(--color-danger);
+}
+
+.lineNumber {
+  display: inline-block;
+  width: 3.5em;
+  padding-right: var(--space-3);
+  text-align: right;
+  color: var(--color-text-muted);
+  user-select: none;
+}
+
+/* How */
+
+.guide {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.steps {
+  display: grid;
+  gap: var(--space-1);
+  padding-left: var(--space-6);
+}
+
+.suggestion {
+  margin: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+}
+
+.suggestion figcaption {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  background: var(--color-surface-raised);
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+.suggestion pre {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-x: auto;
+  background: var(--color-surface);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.6;
+}
+
+.copy {
+  padding: 0 var(--space-2);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font: inherit;
+  cursor: pointer;
+}
+
+.copy:hover {
+  color: var(--color-accent);
+  border-color: var(--color-accent);
+}
+
+.disclaimer {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+  font-style: italic;
+}
+
+.thinking {
+  color: var(--color-text-muted);
+  padding-left: var(--space-3);
+  border-left: 3px solid var(--color-accent);
+  animation: pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  50% {
+    opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .thinking {
+    animation: none;
+  }
+}
+
+.message {
+  padding: var(--space-2) var(--space-3);
+  background: rgb(251 191 36 / 0.1);
+  border-radius: var(--radius-sm);
+  color: var(--color-warning);
+}
+
+/* Actions */
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+}
+
+.ask,
+.check {
+  padding: var(--space-1) var(--space-4);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ask {
+  background: var(--color-accent-strong);
+  color: var(--color-text);
+  border: none;
+}
+
+.check {
+  background: none;
+  color: var(--color-success);
+  border: 1px solid rgb(74 222 128 / 0.5);
+}
+
+.check:hover:not(:disabled) {
+  background: rgb(74 222 128 / 0.12);
+}
+
+.ask:disabled,
+.check:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: 0.75rem;
+}
+
+/* The model says the task does not apply */
+
+.notApplies {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid rgb(251 191 36 / 0.4);
+  border-radius: var(--radius-sm);
+  background: rgb(251 191 36 / 0.08);
+}
+
+.notAppliesTitle {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+
+.discard {
+  padding: var(--space-1) var(--space-3);
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  font: inherit;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.discard:hover:not(:disabled) {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}

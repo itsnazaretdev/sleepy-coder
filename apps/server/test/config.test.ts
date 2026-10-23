@@ -7,6 +7,7 @@ describe('loadConfig', () => {
 
     expect(config.ollamaUrl).toBe('http://127.0.0.1:11434');
     expect(config.model).toBeNull();
+    expect(config.experimentalAgent).toBe(false);
     // Default data dir is <repo root>/data, regardless of the working directory.
     expect(config.dataDir.replaceAll('\\', '/')).toMatch(/\/data$/);
     expect(config.dataDir).not.toMatch(/apps[\\/]server/);
@@ -18,8 +19,9 @@ describe('loadConfig', () => {
         SLEEPY_OLLAMA_URL: 'http://127.0.0.1:9999',
         SLEEPY_MODEL: ' gemma3:4b ',
         SLEEPY_DATA_DIR: '/tmp/sleepy',
+        SLEEPY_EXPERIMENTAL_AGENT: ' 1 ',
       }),
-    ).toEqual({ ollamaUrl: 'http://127.0.0.1:9999', model: 'gemma3:4b', dataDir: '/tmp/sleepy' });
+    ).toEqual({ ollamaUrl: 'http://127.0.0.1:9999', model: 'gemma3:4b', dataDir: '/tmp/sleepy', experimentalAgent: true });
   });
 
   it('treats empty values as unset', () => {

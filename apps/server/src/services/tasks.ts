@@ -21,15 +21,28 @@ export class TaskNotFoundError extends Error {
   }
 }
 
-/** Only one AI suggestion at a time: the local model is slow and uses a lot of memory. */
+/** One model request at a time (suggestions or fix guides): the local model is slow and uses a lot of memory. */
 export class SuggestionBusyError extends Error {
   constructor() {
-    super('The model is already suggesting tasks. Wait for it to finish.');
+    super('The model is already working on another request. Wait for it to finish.');
     this.name = 'SuggestionBusyError';
   }
 }
 
-async function requireRepository(id: string, deps: TaskDeps) {
+let modelBusy = false;
+
+/** Runs `fn` while holding the model. Throws SuggestionBusyError if it is already in use. */
+export async function withModel<T>(fn: () => Promise<T>): Promise<T> {
+  if (modelBusy) throw new SuggestionBusyError();
+  modelBusy = true;
+  try {
+    return await fn();
+  } finally {
+    modelBusy = false;
+  }
+}
+
+export async function requireRepository(id: string, deps: TaskDeps) {
   const repository = await deps.store.get(id);
   if (!repository) throw new RepositoryError('repository-not-found', `Unknown repository: ${id}`);
   // The folder may have been moved or deleted since it was added.
@@ -59,7 +72,7 @@ const SUGGESTION_TIMEOUT_MS = 180_000;
 const SUGGESTION_CONTEXT_TOKENS = 8_192;
 
 /** Adapts Ollama to the provider-agnostic TaskModel used by the tasks package. */
-function ollamaTaskModel(client: OllamaClient, model: string): TaskModel {
+export function ollamaTaskModel(client: OllamaClient, model: string): TaskModel {
   return {
     async complete(messages, schema) {
       const result = await client.chat({
@@ -75,17 +88,12 @@ function ollamaTaskModel(client: OllamaClient, model: string): TaskModel {
   };
 }
 
-let suggesting = false;
-
 /**
  * Asks the local model for improvement tasks and saves them as source "ai".
  * Pending AI tasks from a previous run are replaced; approved/discarded ones are kept.
  */
 export async function suggestAiTasks(repositoryId: string, deps: SuggestDeps): Promise<HuntResponse> {
-  if (suggesting) throw new SuggestionBusyError();
-  suggesting = true;
-
-  try {
+  return withModel(async () => {
     const repository = await requireRepository(repositoryId, deps);
     const model = await requireModel(deps.ollama, deps.configuredModel);
 
@@ -100,9 +108,7 @@ export async function suggestAiTasks(repositoryId: string, deps: SuggestDeps): P
     const { added, removed } = deps.tasks.sync(repositoryId, 'ai', drafts);
 
     return { tasks: deps.tasks.list(repositoryId), added, removed };
-  } finally {
-    suggesting = false;
-  }
+  });
 }
 
 export function updateTaskStatus(id: string, status: TaskStatus, deps: TaskDeps): Task {

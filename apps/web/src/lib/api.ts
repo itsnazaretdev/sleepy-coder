@@ -4,6 +4,8 @@ import {
   SERVER_URL,
   type AddRepositoryRequest,
   type ApiError,
+  type AppConfigResponse,
+  type CheckTaskResponse,
   type HealthResponse,
   type HuntResponse,
   type OllamaStatusResponse,
@@ -12,6 +14,8 @@ import {
   type Repository,
   type RepositoryReport,
   type Task,
+  type TaskGuideResponse,
+  type TaskRun,
   type TaskStatus,
   type UpdateTaskRequest,
 } from '@sleepy-coder/shared';
@@ -64,6 +68,11 @@ async function request<T>(path: string, init: RequestInit = {}, timeoutMs = DEFA
 /** Fetches the backend health status. Throws if the server is down or slow. */
 export function fetchHealth(): Promise<HealthResponse> {
   return request<HealthResponse>('/health');
+}
+
+/** What the backend has turned on (the experimental agent is off by default). */
+export function fetchConfig(): Promise<AppConfigResponse> {
+  return request<AppConfigResponse>('/config');
 }
 
 // --- Ollama -----------------------------------------------------------------
@@ -134,6 +143,39 @@ export function updateTaskStatus(id: string, status: TaskStatus): Promise<Task> 
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(body),
   });
+}
+
+// --- Fix guides -------------------------------------------------------------
+
+/** Where the problem is (no AI) and the last guide written by the model, if any. */
+export function fetchTaskGuide(taskId: string): Promise<TaskGuideResponse> {
+  return request<TaskGuideResponse>(`/tasks/${encodeURIComponent(taskId)}/guide`, {}, 15_000);
+}
+
+/** Asks the local model how to fix the task. Slow; nothing is changed in the repository. */
+export function createTaskGuide(taskId: string): Promise<TaskGuideResponse> {
+  return request<TaskGuideResponse>(`/tasks/${encodeURIComponent(taskId)}/guide`, { method: 'POST' }, 200_000);
+}
+
+/** Runs the rules again: if the problem is gone, the task becomes "done". */
+export function checkTask(taskId: string): Promise<CheckTaskResponse> {
+  return request<CheckTaskResponse>(`/tasks/${encodeURIComponent(taskId)}/check`, { method: 'POST' }, ANALYSIS_TIMEOUT_MS);
+}
+
+// --- Agent runs (experimental) ----------------------------------------------
+
+/** Starts the agent on an approved task. Returns right away with status "running". */
+export function runTask(taskId: string): Promise<TaskRun> {
+  return request<TaskRun>(`/tasks/${encodeURIComponent(taskId)}/run`, { method: 'POST' }, 15_000);
+}
+
+export function fetchRun(runId: string): Promise<TaskRun> {
+  return request<TaskRun>(`/runs/${encodeURIComponent(runId)}`);
+}
+
+/** The latest run of each task of a repository. */
+export function fetchLatestRuns(repositoryId: string): Promise<TaskRun[]> {
+  return request<TaskRun[]>(`/repositories/${encodeURIComponent(repositoryId)}/runs`);
 }
 
 // --- System -----------------------------------------------------------------

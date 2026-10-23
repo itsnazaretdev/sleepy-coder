@@ -13,6 +13,9 @@ importers:
       '@fastify/cors':
         specifier: ^10.0.0
         version: 10.1.0
+      '@sleepy-coder/agent':
+        specifier: workspace:*
+        version: link:../../packages/agent
       '@sleepy-coder/analyzer':
         specifier: workspace:*
         version: link:../../packages/analyzer
@@ -72,6 +75,25 @@ importers:
       '@types/react-dom':
         specifier: ^19.0.0
         version: 19.3.0(@types/react@19.3.0)
+      typescript:
+        specifier: ^5.6.0
+        version: 5.9.3
+      vitest:
+        specifier: ^3.0.0
+        version: 3.2.7(@types/debug@4.1.13)(@types/node@22.20.5)(tsx@4.23.15)(yaml@2.9.1)
+
+  packages/agent:
+    dependencies:
+      '@sleepy-coder/analyzer':
+        specifier: workspace:*
+        version: link:../analyzer
+      '@sleepy-coder/git':
+        specifier: workspace:*
+        version: link:../git
+    devDependencies:
+      '@types/node':
+        specifier: ^22.0.0
+        version: 22.20.5
       typescript:
         specifier: ^5.6.0
         version: 5.9.3

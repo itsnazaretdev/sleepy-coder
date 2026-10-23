@@ -1,7 +1,18 @@
 import { useCallback, useEffect, useState } from 'react';
-import type { Task, TaskStatus } from '@sleepy-coder/shared';
-import { ApiRequestError, fetchTasks, huntTasks, suggestTasks, updateTaskStatus } from '../lib/api';
+import type { Task, TaskRun, TaskStatus } from '@sleepy-coder/shared';
+import {
+  ApiRequestError,
+  fetchConfig,
+  fetchLatestRuns,
+  fetchRun,
+  fetchTasks,
+  huntTasks,
+  runTask,
+  suggestTasks,
+  updateTaskStatus,
+} from '../lib/api';
 import { describeError } from '../lib/messages';
+import { runsByTask } from '../lib/runs';
 import {
   CATEGORY_LABELS,
   COMPLEXITY_LABELS,
@@ -13,7 +24,9 @@ import {
   STATUS_LABELS,
   STATUS_ORDER,
 } from '../lib/tasks';
+import FixGuide from './FixGuide';
 import InlineText from './InlineText';
+import RunResult from './RunResult';
 import styles from './TaskBoard.module.css';
 
 interface Props {
@@ -26,9 +39,15 @@ const OFFLINE_MESSAGE = 'No connection to the backend.';
 const errorMessage = (error: unknown) =>
   error instanceof ApiRequestError ? describeError(error.code) : OFFLINE_MESSAGE;
 
-/** React component: tasks of one repository, with hunting and review. */
+/** How often a running agent is checked. Live updates (SSE) come with Work Sessions. */
+const RUN_POLL_MS = 2_000;
+
+/** React component: tasks of one repository, with hunting, review and fix guides. */
 export default function TaskBoard({ repositoryId }: Props) {
   const [state, setState] = useState<LoadState>({ kind: 'loading' });
+  /** The autonomous agent ("Run") is experimental and hidden unless the backend enables it. */
+  const [experimentalAgent, setExperimentalAgent] = useState(false);
+  const [runs, setRuns] = useState<Map<string, TaskRun>>(new Map());
   const [tab, setTab] = useState<TaskStatus>('pending');
   /** Which search is running, if any. Only one at a time. */
   const [searching, setSearching] = useState<'none' | 'static' | 'ai'>('none');
@@ -38,7 +57,15 @@ export default function TaskBoard({ repositoryId }: Props) {
   const load = useCallback(async () => {
     setState({ kind: 'loading' });
     try {
-      setState({ kind: 'ready', tasks: await fetchTasks(repositoryId) });
+      const [tasks, config] = await Promise.all([
+        fetchTasks(repositoryId),
+        fetchConfig().catch(() => ({ experimentalAgent: false })),
+      ]);
+      setState({ kind: 'ready', tasks });
+      setExperimentalAgent(config.experimentalAgent);
+      if (config.experimentalAgent) {
+        setRuns(runsByTask(await fetchLatestRuns(repositoryId).catch(() => [] as TaskRun[])));
+      }
     } catch (error) {
       setState({ kind: 'error', message: errorMessage(error) });
     }
@@ -49,6 +76,28 @@ export default function TaskBoard({ repositoryId }: Props) {
     setNotice(null);
     void load();
   }, [load]);
+
+  // Ids of runs in progress, as one string so the effect below only restarts when they change.
+  const runningKey = [...runs.values()]
+    .filter((run) => run.status === 'running')
+    .map((run) => run.id)
+    .join(',');
+  const agentBusy = runningKey !== '';
+
+  // While a run is in progress, refresh it every few seconds.
+  useEffect(() => {
+    if (!runningKey) return;
+    const ids = runningKey.split(',');
+    const timer = setInterval(async () => {
+      const updated = await Promise.all(ids.map((id) => fetchRun(id).catch(() => null)));
+      setRuns((current) => {
+        const next = new Map(current);
+        for (const run of updated) if (run) next.set(run.taskId, run);
+        return next;
+      });
+    }, RUN_POLL_MS);
+    return () => clearInterval(timer);
+  }, [runningKey]);
 
   const runSearch = async (kind: 'static' | 'ai') => {
     setSearching(kind);
@@ -69,6 +118,12 @@ export default function TaskBoard({ repositoryId }: Props) {
     }
   };
 
+  /** A task changed somewhere else (e.g. "Check again" found it fixed). */
+  const taskChanged = (updated: Task) => {
+    setState((current) => (current.kind === 'ready' ? { kind: 'ready', tasks: replaceTask(current.tasks, updated) } : current));
+    if (updated.status === 'done') setNotice('Fixed! The task moved to Done.');
+  };
+
   const changeStatus = async (task: Task, status: TaskStatus) => {
     setUpdatingId(task.id);
     try {
@@ -81,6 +136,16 @@ export default function TaskBoard({ repositoryId }: Props) {
     }
   };
 
+  const startRun = async (task: Task) => {
+    setNotice(null);
+    try {
+      const run = await runTask(task.id);
+      setRuns((current) => new Map(current).set(task.id, run));
+    } catch (error) {
+      setNotice(errorMessage(error));
+    }
+  };
+
   const tasks = state.kind === 'ready' ? state.tasks : [];
   const counts = countByStatus(tasks);
   const visible = tasks.filter((task) => task.status === tab);
@@ -90,7 +155,10 @@ export default function TaskBoard({ repositoryId }: Props) {
       <header className={styles.header}>
         <div>
           <h2>Tasks</h2>
-          <p className={styles.muted}>Review what was found and approve what you want the agent to do.</p>
+          <p className={styles.muted}>
+            Review what was found and approve what you want to fix. Sleepy Coder shows you where and how; you make the
+            change.
+          </p>
         </div>
         <div className={styles.headerActions}>
           <button
@@ -114,7 +182,8 @@ export default function TaskBoard({ repositoryId }: Props) {
 
       {searching === 'ai' && (
         <p className={styles.thinking}>
-          Gemma is reading part of your code. This can take a minute or two, especially the first time.
+          Gemma is reading part of your code. This can take a minute or two, especially the first time. Its ideas
+          are a starting point, not facts: check them before acting on them.
         </p>
       )}
 
@@ -127,8 +196,11 @@ export default function TaskBoard({ repositoryId }: Props) {
         <div className={styles.empty}>
           <p>No tasks yet.</p>
           <p className={styles.muted}>
-            “Find tasks” instantly finds TODO and FIXME comments and things the repository is missing, without AI.
-            “Suggest with AI” asks Gemma for improvement ideas based on your code.
+            <strong>Find tasks</strong> uses rules, without AI: TODO and FIXME comments, SEO and accessibility issues,
+            and files the repository is missing. What it finds is really there.
+            <br />
+            <strong>Suggest with AI</strong> asks Gemma, a small local model, for ideas. They can be wrong: check them
+            against your code before acting on them.
           </p>
         </div>
       )}
@@ -150,6 +222,18 @@ export default function TaskBoard({ repositoryId }: Props) {
             ))}
           </div>
 
+          {tab === 'approved' && visible.length > 0 && (
+            <p className={styles.muted}>
+              “How to fix” shows the exact lines and asks Gemma for a guide. Nothing is changed in your repository.
+              {experimentalAgent && (
+                <>
+                  {' '}
+                  Experimental: “Run” lets the agent try the task on its own <code>sleepy/…</code> branch.
+                </>
+              )}
+            </p>
+          )}
+
           {visible.length === 0 ? (
             <p className={styles.muted}>Nothing here.</p>
           ) : (
@@ -158,8 +242,13 @@ export default function TaskBoard({ repositoryId }: Props) {
                 <TaskCard
                   key={task.id}
                   task={task}
+                  run={runs.get(task.id) ?? null}
                   busy={updatingId === task.id}
+                  agentBusy={agentBusy}
+                  experimentalAgent={experimentalAgent}
                   onChange={(status) => void changeStatus(task, status)}
+                  onTaskChange={taskChanged}
+                  onRun={() => void startRun(task)}
                 />
               ))}
             </ul>
@@ -172,16 +261,25 @@ export default function TaskBoard({ repositoryId }: Props) {
 
 interface TaskCardProps {
   task: Task;
+  run: TaskRun | null;
   busy: boolean;
+  /** True while the agent is running any task (one at a time). */
+  agentBusy: boolean;
+  experimentalAgent: boolean;
   onChange: (status: TaskStatus) => void;
+  onTaskChange: (task: Task) => void;
+  onRun: () => void;
 }
 
-function TaskCard({ task, busy, onChange }: TaskCardProps) {
+function TaskCard({ task, run, busy, agentBusy, experimentalAgent, onChange, onTaskChange, onRun }: TaskCardProps) {
+  const isRunning = run?.status === 'running';
+  const [guideOpen, setGuideOpen] = useState(false);
+
   return (
     <li className={task.source === 'ai' ? `${styles.card} ${styles.aiCard}` : styles.card}>
       <div className={styles.cardHead}>
         <h3>
-          {task.source === 'ai' && <span className={styles.aiBadge}>AI</span>}
+          {task.source === 'ai' && <span className={styles.aiBadge}>AI idea</span>}
           <InlineText text={task.title} />
         </h3>
         <span className={`${styles.priority} ${styles[task.priority]}`}>{LEVEL_LABELS[task.priority]} priority</span>
@@ -191,11 +289,20 @@ function TaskCard({ task, busy, onChange }: TaskCardProps) {
         <InlineText text={task.description} />
       </p>
 
+      {task.source === 'ai' && (
+        <p className={styles.aiWarning}>
+          Idea from a small local model. It may describe code that is not there: open the file and check it before
+          approving.
+        </p>
+      )}
+
       <ul className={styles.meta}>
         <li>{CATEGORY_LABELS[task.category]}</li>
         <li>{COMPLEXITY_LABELS[task.complexity]} complexity</li>
         <li>{LEVEL_LABELS[task.risk]} risk</li>
-        <li>{task.source === 'ai' ? 'Suggested by AI' : 'Found automatically'}</li>
+        <li className={task.source === 'ai' ? styles.sourceAi : styles.sourceRule}>
+          {task.source === 'ai' ? 'AI idea · verify it' : 'Found by a rule · reliable'}
+        </li>
       </ul>
 
       {task.affectedFiles.length > 0 && (
@@ -207,29 +314,64 @@ function TaskCard({ task, busy, onChange }: TaskCardProps) {
       )}
 
       <details className={styles.suggestion}>
-        <summary>How to do it</summary>
+        <summary>Quick hint</summary>
         <p>
           <InlineText text={task.suggestedImplementation} />
         </p>
       </details>
 
       <div className={styles.actions}>
-        {task.status !== 'approved' && (
+        {task.status === 'approved' && (
+          <button
+            type="button"
+            className={styles.run}
+            aria-expanded={guideOpen}
+            onClick={() => setGuideOpen((open) => !open)}
+          >
+            {guideOpen ? 'Hide guide' : 'How to fix'}
+          </button>
+        )}
+        {task.status === 'approved' && experimentalAgent && (
+          <button
+            type="button"
+            className={styles.experimental}
+            disabled={busy || agentBusy}
+            title={agentBusy && !isRunning ? 'The agent is working on another task' : undefined}
+            onClick={onRun}
+          >
+            {isRunning ? 'Running…' : run ? 'Run again (experimental)' : 'Run (experimental)'}
+          </button>
+        )}
+        {task.status === 'pending' && (
           <button type="button" className={styles.approve} disabled={busy} onClick={() => onChange('approved')}>
             Approve
           </button>
         )}
-        {task.status !== 'discarded' && (
-          <button type="button" className={styles.discard} disabled={busy} onClick={() => onChange('discarded')}>
+        {(task.status === 'pending' || task.status === 'approved') && (
+          <button
+            type="button"
+            className={styles.discard}
+            disabled={busy || isRunning}
+            onClick={() => onChange('discarded')}
+          >
             Discard
           </button>
         )}
         {task.status !== 'pending' && (
-          <button type="button" className={styles.reset} disabled={busy} onClick={() => onChange('pending')}>
+          <button
+            type="button"
+            className={styles.reset}
+            disabled={busy || isRunning}
+            onClick={() => onChange('pending')}
+          >
             Back to pending
           </button>
         )}
       </div>
+
+      {guideOpen && task.status === 'approved' && <FixGuide task={task} onTaskChange={onTaskChange} />}
+
+      {experimentalAgent && run && <RunResult run={run} />}
     </li>
   );
 }

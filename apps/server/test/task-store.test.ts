@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import type { TaskDraft } from '@sleepy-coder/shared';
 import type { Database } from '../src/db/database.js';
 import { createSqliteRepositoryStore } from '../src/store/repositories.js';
+import { createSqliteGuideStore } from '../src/store/guides.js';
 import { createSqliteTaskStore, type TaskStore } from '../src/store/tasks.js';
 import { memoryDb } from './memory-db.js';
 
@@ -70,6 +71,25 @@ describe('TaskStore.sync', () => {
     expect(tasks.list(REPO, 'pending')).toEqual([]);
   });
 
+  it('reopens a static task marked done when a new hunt finds it again', () => {
+    tasks.sync(REPO, 'static', [draft('a')]);
+    tasks.sync(REPO, 'ai', [draft('x', { source: 'ai' })]);
+    for (const task of tasks.list(REPO)) tasks.updateStatus(task.id, 'done');
+
+    tasks.sync(REPO, 'static', [draft('a')]);
+    tasks.sync(REPO, 'ai', [draft('x', { source: 'ai' })]);
+
+    const byTitle = Object.fromEntries(tasks.list(REPO).map((t) => [t.title, t.status]));
+    expect(byTitle).toEqual({ 'Task a': 'pending', 'Task x': 'done' });
+  });
+
+  it('keeps done tasks that are no longer found', () => {
+    tasks.sync(REPO, 'static', [draft('a')]);
+    tasks.updateStatus(tasks.list(REPO)[0]!.id, 'done');
+    expect(tasks.sync(REPO, 'static', [])).toEqual({ added: 0, removed: 0 });
+    expect(tasks.list(REPO, 'done')).toHaveLength(1);
+  });
+
   it('refreshes the text of pending tasks but not of approved ones', () => {
     tasks.sync(REPO, 'static', [draft('a'), draft('b')]);
     const b = tasks.list(REPO).find((t) => t.title === 'Task b')!;
@@ -102,7 +122,7 @@ describe('TaskStore.updateStatus', () => {
     const after = tasks.updateStatus(before!.id, 'approved');
 
     expect(after?.status).toBe('approved');
-    expect(after?.updatedAt > before!.updatedAt).toBe(true);
+    expect(after!.updatedAt > before!.updatedAt).toBe(true);
   });
 
   it('returns null for an unknown id', () => {
@@ -123,5 +143,24 @@ describe('deleting a repository', () => {
     tasks.sync(REPO, 'static', [draft('a')]);
     await createSqliteRepositoryStore(db).remove(REPO);
     expect(tasks.list(REPO)).toEqual([]);
+  });
+});
+
+describe('GuideStore', () => {
+  it('keeps the latest guide of each task and deletes it with the task', () => {
+    tasks.sync(REPO, 'static', [draft('a')]);
+    const [task] = tasks.list(REPO);
+    const guides = createSqliteGuideStore(db);
+    const base = { taskId: task!.id, applies: true, steps: ['one'], suggestions: [{ path: 'a.ts', code: 'x' }], model: 'gemma3:4b' };
+
+    expect(guides.get(task!.id)).toBeNull();
+    guides.save({ ...base, explanation: 'first', createdAt: '2026-10-23T10:00:00Z' });
+    guides.save({ ...base, explanation: 'second', createdAt: '2026-10-23T11:00:00Z' });
+    expect(guides.get(task!.id)).toEqual({ ...base, explanation: 'second', createdAt: '2026-10-23T11:00:00Z' });
+    guides.save({ ...base, applies: false, explanation: 'third', createdAt: '2026-10-23T12:00:00Z' });
+    expect(guides.get(task!.id)?.applies).toBe(false);
+
+    db.prepare('DELETE FROM tasks WHERE id = ?').run(task!.id);
+    expect(guides.get(task!.id)).toBeNull();
   });
 });

@@ -1,58 +1,26 @@
-import type { FastifyInstance, FastifyReply } from 'fastify';
-import { isOllamaError, type OllamaErrorCode } from '@sleepy-coder/ollama';
-import { AiOutputError } from '@sleepy-coder/tasks';
-import type { ApiError, TaskStatus, UpdateTaskRequest } from '@sleepy-coder/shared';
-import { NoModelError } from '../services/ollama.js';
-import { RepositoryError } from '../services/repositories.js';
-import {
-  huntTasks,
-  listTasks,
-  suggestAiTasks,
-  SuggestionBusyError,
-  TaskNotFoundError,
-  updateTaskStatus,
-  type SuggestDeps,
-} from '../services/tasks.js';
+import type { FastifyInstance } from 'fastify';
+import type { TaskStatus, UpdateTaskRequest } from '@sleepy-coder/shared';
+import { checkTask, createTaskGuide, getTaskGuide, type GuideDeps } from '../services/guides.js';
+import { huntTasks, listTasks, suggestAiTasks, updateTaskStatus } from '../services/tasks.js';
+import { domainErrorHandler } from './errors.js';
 
-const STATUSES = ['pending', 'approved', 'discarded'] as const;
+const STATUSES = ['pending', 'approved', 'done', 'discarded'] as const;
 
-const OLLAMA_STATUS: Record<OllamaErrorCode, number> = {
-  unreachable: 503,
-  timeout: 504,
-  'model-not-found': 404,
-  'bad-response': 502,
-};
-
-const repositoryParams = {
+export const repositoryParams = {
   type: 'object',
   required: ['id'],
   properties: { id: { type: 'string', pattern: '^[a-f0-9]{12}$' } },
 } as const;
 
-const taskParams = {
+export const uuidParams = {
   type: 'object',
   required: ['id'],
   properties: { id: { type: 'string', pattern: '^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$' } },
 } as const;
 
-function send(reply: FastifyReply, status: number, error: string, message: string) {
-  const body: ApiError = { error, message };
-  return reply.code(status).send(body);
-}
-
-export async function taskRoutes(app: FastifyInstance, deps: SuggestDeps): Promise<void> {
+export async function taskRoutes(app: FastifyInstance, deps: GuideDeps): Promise<void> {
   // Turn domain errors into JSON responses for every route in this plugin.
-  app.setErrorHandler((error, _request, reply) => {
-    if (error instanceof RepositoryError) {
-      return send(reply, error.code === 'repository-not-found' ? 404 : 422, error.code, error.message);
-    }
-    if (error instanceof TaskNotFoundError) return send(reply, 404, 'task-not-found', error.message);
-    if (error instanceof NoModelError) return send(reply, 409, 'no-model', error.message);
-    if (error instanceof SuggestionBusyError) return send(reply, 409, 'ai-busy', error.message);
-    if (error instanceof AiOutputError) return send(reply, 502, 'ai-invalid-output', error.message);
-    if (isOllamaError(error)) return send(reply, OLLAMA_STATUS[error.code], error.code, error.message);
-    return reply.send(error);
-  });
+  app.setErrorHandler(domainErrorHandler);
 
   app.get<{ Params: { id: string }; Querystring: { status?: TaskStatus } }>(
     '/repositories/:id/tasks',
@@ -84,7 +52,7 @@ export async function taskRoutes(app: FastifyInstance, deps: SuggestDeps): Promi
     '/tasks/:id',
     {
       schema: {
-        params: taskParams,
+        params: uuidParams,
         body: {
           type: 'object',
           required: ['status'],
@@ -94,5 +62,20 @@ export async function taskRoutes(app: FastifyInstance, deps: SuggestDeps): Promi
       },
     },
     async (request) => updateTaskStatus(request.params.id, request.body.status, deps),
+  );
+
+  /** Where the problem is (no AI) and the last fix guide, if any. */
+  app.get<{ Params: { id: string } }>('/tasks/:id/guide', { schema: { params: uuidParams } }, (request) =>
+    getTaskGuide(request.params.id, deps),
+  );
+
+  /** Asks the local model how to fix the task. Slow; nothing is written to the repository. */
+  app.post<{ Params: { id: string } }>('/tasks/:id/guide', { schema: { params: uuidParams } }, (request) =>
+    createTaskGuide(request.params.id, deps),
+  );
+
+  /** Runs the rules again: if the problem is gone, the task becomes "done". */
+  app.post<{ Params: { id: string } }>('/tasks/:id/check', { schema: { params: uuidParams } }, (request) =>
+    checkTask(request.params.id, deps),
   );
 }

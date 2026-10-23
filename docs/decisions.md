@@ -163,9 +163,135 @@ at a time. The `tasks` package talks to a provider-agnostic `TaskModel`; the ser
 
 The model answers in English and wraps code names in backticks, which the UI renders as code.
 
+## ADR-018 — The agent works in a git worktree on its own branch
+
+**Decision:** Each task runs in a `git worktree` under `data/worktrees/`, on a new branch named
+`sleepy/<title-slug>-<task-id>` that starts at the user's current HEAD. The agent commits only
+there (it refuses any branch without the `sleepy/` prefix), signs commits as "Sleepy Coder",
+skips repository hooks (`--no-verify`) and never commits `node_modules`. Removing a worktree
+keeps its branch so the result can still be reviewed. Nothing is ever merged or pushed.
+
+**Why:** The user's folder, current branch and uncommitted changes stay untouched no matter
+what the agent does, and every change is one normal Git branch away from review or deletion.
+
+## ADR-019 — Sandboxed file access and a fixed test command
+
+**Decision:** The agent's only access to files is `openWorkspace()`:
+- paths must be relative; `..`, absolute paths, `~` and control characters are rejected;
+- after resolving symlinks, every path must stay inside the worktree;
+- `.git` and `node_modules` can be neither read nor written;
+- files that decide what gets executed are read-only: `package.json`, lockfiles, `.npmrc`,
+  `.env*`, CI/hook folders and tool configs (`*.config.{js,ts,mjs…}`, `.eslintrc.cjs`…);
+- size limits for reads and writes; text only.
+
+The only command the agent can trigger is the repository's own `test` script, read from the
+user's original checkout, run with the lockfile's package manager, without a shell, with
+`CI=1`, a timeout that kills the whole process group, and limited output. The worktree reuses
+the user's `node_modules` through symlinks instead of reinstalling.
+
+**Why:** Paths from the model are untrusted input. Locking the files that define scripts,
+dependencies and configs means the model cannot choose which commands run.
+
+**Known residual risk:** running tests executes code, including tests or source files the agent
+wrote. This cannot be fully prevented while the agent is allowed to run tests; it is accepted
+because a task only runs after the user explicitly approves it, on their own repository.
+
+## ADR-020 — A guided agent pipeline instead of a free tool loop
+
+**Decision:** Running a task is a fixed pipeline, not an open-ended "the model picks a tool"
+loop: create worktree → run tests before → give the model the task and the relevant files
+(at most ~24k characters; files over 12k characters are not rewritten) → the model returns a
+summary and search/replace blocks for at most 3 files (JSON Schema; an empty `search` creates a
+new file; the search text must appear exactly once, ignoring indentation if needed; a file is
+written only if all its blocks apply) → each edit is checked
+(sandboxed path, protected files, no placeholders like `// ... rest of the code`, does not delete
+more than half of a file) → run tests → if the change broke tests that passed before, one fix
+attempt with the test output → commit on the agent branch → save the diff → remove the worktree
+folder. Without a commit, the empty branch is deleted.
+
+The run happens in the background inside the backend (`POST /tasks/:id/run` answers 202);
+the UI polls `GET /runs/:id` every 2 s until Work Sessions bring SSE. One run at a time.
+At startup, runs left `running` become `interrupted` and their worktree folders are removed.
+
+**Why:** A 4B model is unreliable at multi-step tool use. The first version asked it for the
+complete new content of each file; in real runs Gemma dropped half of a component while changing
+one line. Search/replace blocks ("replace this exact snippet with this one") keep the rest of the
+file byte-for-byte identical, so the model only has to get the changed part right.
+
+## ADR-022 — "Done" must mean the task is done
+
+**Decision:** Two extra checks before the agent commits:
+- An edit that only changes whitespace (spaces, line breaks) is rejected. The prompt also tells
+  the model not to reformat code it is not changing, and to return no change (with an
+  explanation) if the task does not apply to the files it sees.
+- For tasks found by rules (`source: 'static'`), the same rules are run again on the worktree
+  after the change. If they still produce the task, the model gets one more try with that
+  problem in front of it; if it is still there, the run fails and nothing is committed.
+
+**Why:** In a real run on the CSS backgrounds project, Gemma was asked to add `alt` text and
+only reformatted a file; the run was reported as "Done". Re-using the rule that found a task
+as its acceptance check makes "Done" trustworthy for those tasks. AI-suggested tasks have no
+such rule, so for them the whitespace check is the safety net and the diff review matters more.
+
+## ADR-021 — SEO and accessibility checks are rules, not AI
+
+**Decision:** "Find tasks" also checks markup files (`.astro`, `.html`, `.jsx`, `.tsx`, `.vue`,
+`.svelte`) for: more than one `<h1>` per page, `<img>` without `alt`, and `<html>` without `lang`.
+Astro pages are checked as rendered: imports of `.astro` components are followed (relative,
+`@/…` and `~/…`), so an `<h1>` in the layout plus one in the page is found.
+
+For duplicate `<h1>`, the rule decides which one is the real main title and keeps it out of the
+task: the page's own `<h1>` if it has one, otherwise a hero/header-like component, otherwise
+the only file that does not look like a preview, modal, card or mockup. The task's affected
+files are only the files to change, its instructions name the `<h1>` to keep, and pages broken
+by the same extra `<h1>` become one task. When the main title is unclear, the task asks the
+user to decide. (Found on the CSS backgrounds site: a preview modal simulating a website had its
+own `<h1>`, and the first version of the rule blamed the hero.)
+
+**Why:** These issues are common, easy to verify with rules and often span two files (layout
+and page), which the AI never sees together because it only reads a few files. A rule always
+finds them, and it hands the agent exactly the files it needs. A fixed pipeline keeps every step predictable and testable, and the checks catch the most
+common small-model failures (truncated files, placeholders) before anything is committed.
+
 **Why:** A 4B model on a laptop has a small context window and sometimes invents files or
 fields. Keeping the input small makes it faster and more focused; treating the output as
 untrusted keeps bad suggestions out of the database. Pending AI tasks are replaced on each run
 (their titles change from run to run), while approved and discarded ones are kept.
 Tree-sitter is kept for Phase 4/5, where real code parsing (functions, TODOs in context)
 is needed.
+
+## ADR-023 — Fix guides instead of automatic edits; the agent becomes experimental
+
+**Context:** With `gemma3:4b`, the agent (ADR-018 to ADR-022) failed on most real tasks, each time
+in a new way: it reformatted instead of fixing (whole-file edits), deleted more than half of a
+file, and with search/replace blocks it wrote the text to replace from memory, so it was not in
+the file ("the text to replace was not found"). The safety checks always caught it — nothing
+bad was committed — but a run that ends in "Failed" most of the time does not help anyone, and
+bigger tasks than a duplicate `<h1>` would fail more, not less. The model's explanations, on the
+other hand, were consistently right.
+
+**Decision:** The default flow is a fix guide, and the user makes the change:
+- **Where** (`locateTask`, no AI): the file, line and a snippet for each problem. Rules know what
+  they look for (`<h1>` outside comments, `<img>` without `alt`, the TODO line even if it moved),
+  so these locations are exact. For AI tasks, the code names in backticks are searched in the
+  affected files.
+- **How** (`writeFixGuide`, on request): the model sees the numbered lines and the task's hint
+  and returns an explanation, steps and suggested code. It is validated like any model output
+  (lengths capped, suggestions only for the task's files) and saved in `task_guides`
+  (migration 3, the latest per task). Nothing is written to the repository.
+- **Check again** (`POST /tasks/:id/check`): for static tasks, the rules run again on the
+  repository; if the task's fingerprint is gone, the status becomes `done`. AI tasks are marked
+  as done by the user. A static task marked `done` that a later hunt finds again goes back to
+  `pending`.
+- AI-suggested tasks can be wrong (in the CSS backgrounds project, Gemma said every SEO
+  description was an empty string; none was). When no exact line is found, the guide prompt
+  includes the file itself, and the model must first answer `applies`: if the problem is not in
+  the code, the UI says so and offers to discard the task (migration 4 adds `applies`).
+- The agent is kept, off by default: `SLEEPY_EXPERIMENTAL_AGENT=1` shows the Run button and
+  enables `POST /tasks/:id/run` (otherwise it answers 403 `agent-disabled`).
+
+**Why:** It plays to what each part does reliably: rules are exact, the model is good at
+explaining, the person is good at editing. It keeps the human in control (the brief's Assistant
+mode) and turns Sleepy Coder into a fast "where is the problem and why" tool. The agent code is
+tested and safe, costs nothing when off, and is ready for larger local models.
+

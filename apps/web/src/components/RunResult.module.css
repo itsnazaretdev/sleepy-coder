@@ -1,0 +1,192 @@
+.panel {
+  display: grid;
+  gap: var(--space-2);
+  margin-top: var(--space-2);
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  min-width: 0;
+}
+
+.running {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  color: var(--color-text-muted);
+}
+
+.spinner {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  border: 2px solid var(--color-accent-soft);
+  border-top-color: var(--color-accent);
+  border-radius: 50%;
+  animation: spin 0.9s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .spinner {
+    animation-duration: 3s;
+  }
+}
+
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.badge {
+  padding: 1px var(--space-2);
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  border: 1px solid currentColor;
+}
+
+.completed {
+  color: var(--color-success);
+}
+
+.failed {
+  color: var(--color-danger);
+}
+
+.tests-failed,
+.interrupted {
+  color: var(--color-warning);
+}
+
+.branch {
+  color: var(--color-text-muted);
+  overflow-wrap: anywhere;
+}
+
+.branch code,
+.files code {
+  color: var(--color-accent);
+}
+
+.summary {
+  overflow-wrap: anywhere;
+}
+
+.error {
+  color: var(--color-warning);
+  overflow-wrap: anywhere;
+}
+
+.muted {
+  color: var(--color-text-muted);
+}
+
+.files {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: 2px;
+  font-size: 0.8rem;
+}
+
+.files li {
+  display: flex;
+  gap: var(--space-2);
+  min-width: 0;
+}
+
+.files code {
+  overflow-wrap: anywhere;
+}
+
+.add {
+  color: var(--color-success);
+}
+
+.del {
+  color: var(--color-danger);
+}
+
+.tests {
+  display: grid;
+  gap: 2px;
+}
+
+.testLine summary,
+.details summary {
+  cursor: pointer;
+}
+
+.details summary {
+  color: var(--color-text-muted);
+}
+
+.pass {
+  color: var(--color-success);
+  font-weight: 700;
+}
+
+.fail {
+  color: var(--color-danger);
+  font-weight: 700;
+}
+
+.output,
+.diff {
+  margin-top: var(--space-2);
+  max-height: 360px;
+  overflow: auto;
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  white-space: pre;
+}
+
+.output {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.added {
+  color: var(--color-success);
+  background: rgb(74 222 128 / 0.08);
+}
+
+.removed {
+  color: var(--color-danger);
+  background: rgb(248 113 113 / 0.08);
+}
+
+.hunk {
+  color: var(--color-accent);
+}
+
+.meta {
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.context {
+  color: var(--color-text);
+}
+
+.steps {
+  margin: var(--space-2) 0 0;
+  padding-left: var(--space-6);
+  color: var(--color-text-muted);
+  display: grid;
+  gap: 2px;
+}
