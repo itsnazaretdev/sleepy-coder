@@ -12,6 +12,7 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const navItems = [
   { href: '/', label: 'Dashboard' },
   { href: '/repositories', label: 'Repositories' },
+  { href: '#', label: 'Settings', soon: true },
 ];
 ---
 
@@ -50,10 +51,11 @@ const navItems = [
                 <li>
                   <a
                     href={item.href}
-                    class:list={['nav-link', { active: currentPath === item.href }]}
-                    aria-current={currentPath === item.href ? 'page' : undefined}
+                    class:list={['nav-link', { active: !item.soon && currentPath === item.href, soon: item.soon }]}
+                    aria-disabled={item.soon ? 'true' : undefined}
                   >
                     {item.label}
+                    {item.soon && <span class="soon-tag">soon</span>}
                   </a>
                 </li>
               ))
@@ -177,6 +179,18 @@ const navItems = [
     color: var(--color-accent);
   }
 
+  .nav-link.soon {
+    pointer-events: none;
+    opacity: 0.55;
+  }
+
+  .soon-tag {
+    font-size: 0.7rem;
+    padding: 0 var(--space-2);
+    border: 1px solid var(--color-border);
+    border-radius: 999px;
+  }
+
   .tagline {
     margin-top: auto;
     color: var(--color-text-muted);
@@ -220,6 +234,7 @@ const navItems = [
     width: 100%;
     max-width: 1100px;
     padding: var(--space-8);
+    margin-bottom: 20rem;
   }
 
   /* Medium and small screens: the sidebar becomes a bar at the top. */
