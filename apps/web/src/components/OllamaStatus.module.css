@@ -110,7 +110,7 @@
 
 .button:hover:not(:disabled) {
   background: var(--color-accent-strong);
-  color: var(--color-text);
+  color: var(--color-on-accent);
 }
 
 .button:disabled {

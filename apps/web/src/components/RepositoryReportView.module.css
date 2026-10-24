@@ -1,4 +1,5 @@
 .report {
+  container-type: inline-size;
   display: grid;
   gap: var(--space-4);
 }
@@ -42,7 +43,7 @@
 
 .button:hover:not(:disabled) {
   background: var(--color-accent-strong);
-  color: var(--color-text);
+  color: var(--color-on-accent);
 }
 
 .button:disabled {
@@ -95,7 +96,7 @@
 
 .stats {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: max-content minmax(0, 1fr);
   gap: var(--space-2) var(--space-4);
   font-size: 0.9rem;
 }
@@ -107,7 +108,7 @@
 .stats dd {
   margin: 0;
   min-width: 0;
-  overflow-wrap: anywhere;
+  overflow-wrap: break-word;
 }
 
 .commitMeta {
@@ -168,7 +169,7 @@
 
 .chipRow {
   display: grid;
-  grid-template-columns: 170px 1fr;
+  grid-template-columns: 170px minmax(0, 1fr);
   align-items: center;
   gap: var(--space-3);
   font-size: 0.85rem;
@@ -193,17 +194,24 @@
   border: 1px solid var(--color-border);
 }
 
-@media (max-width: 720px) {
+/* Git and Files side by side only when each panel has room (container: .report). */
+@container (max-width: 640px) {
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(0, 1fr);
   }
 
+  .chipRow {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}
+
+@container (max-width: 420px) {
   .header {
     flex-direction: column;
   }
 
-  .chipRow {
-    grid-template-columns: 1fr;
-    gap: var(--space-1);
+  .panel {
+    padding: var(--space-4);
   }
 }

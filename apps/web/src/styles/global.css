@@ -5,10 +5,10 @@
 
 :root {
   /* Surfaces */
-  --color-bg: #0f0d15;
-  --color-surface: #17141f;
-  --color-surface-raised: #1f1b2a;
-  --color-border: #2c2638;
+  --color-bg: #0e0c14;
+  --color-surface: #1a1724;
+  --color-surface-raised: #242031;
+  --color-border: #342d44;
 
   /* Text */
   --color-text: #ece9f3;
@@ -18,6 +18,8 @@
   --color-accent: #a78bfa;
   --color-accent-strong: #8b5cf6;
   --color-accent-soft: rgb(167 139 250 / 0.12);
+  /* Text on top of --color-accent-strong (buttons) */
+  --color-on-accent: #ffffff;
 
   /* Status */
   --color-success: #4ade80;
@@ -50,6 +52,47 @@
   --radius-lg: 14px;
 
   color-scheme: dark;
+}
+
+/*
+ * Light theme. It follows the system setting unless the user picked one with the theme switch
+ * in the sidebar (stored as data-theme on <html>). The light values are written twice — for the
+ * system preference and for the explicit choice — because CSS cannot share them between both.
+ */
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme='dark']) {
+    --color-bg: #f6f5fa;
+    --color-surface: #ffffff;
+    --color-surface-raised: #efedf5;
+    --color-border: #dedae8;
+    --color-text: #1c1926;
+    --color-text-muted: #5f5970;
+    --color-accent: #6d28d9;
+    --color-accent-strong: #7c3aed;
+    --color-accent-soft: rgb(124 58 237 / 0.1);
+    --color-success: #15803d;
+    --color-warning: #b45309;
+    --color-danger: #dc2626;
+    --chart-6: #a9a3b9;
+    color-scheme: light;
+  }
+}
+
+:root[data-theme='light'] {
+  --color-bg: #f6f5fa;
+  --color-surface: #ffffff;
+  --color-surface-raised: #efedf5;
+  --color-border: #dedae8;
+  --color-text: #1c1926;
+  --color-text-muted: #5f5970;
+  --color-accent: #6d28d9;
+  --color-accent-strong: #7c3aed;
+  --color-accent-soft: rgb(124 58 237 / 0.1);
+  --color-success: #15803d;
+  --color-warning: #b45309;
+  --color-danger: #dc2626;
+  --chart-6: #a9a3b9;
+  color-scheme: light;
 }
 
 /* Minimal reset */

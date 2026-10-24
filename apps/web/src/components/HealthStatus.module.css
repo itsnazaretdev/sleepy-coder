@@ -72,5 +72,5 @@
 
 .retry:hover {
   background: var(--color-accent-strong);
-  color: var(--color-text);
+  color: var(--color-on-accent);
 }

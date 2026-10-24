@@ -14,18 +14,71 @@ const SKIPPED_FOLDERS = /(^|\/)(server|api|scripts|bin|cli|backend|test|tests|__
 const MAX_FILE_BYTES = 256 * 1024;
 const MAX_CONSOLE_TASKS = 10;
 
-/** `console.log(` not inside a // comment. Block comments are rare enough to ignore. */
+/** `console.log(` in code (comments are removed before searching). */
 export const CONSOLE_LOG_PATTERN = /\bconsole\.log\s*\(/;
+
+/**
+ * Replaces every comment with spaces, keeping line breaks so line numbers stay the same:
+ * `// …`, `/* … *\/` (also across lines), `<!-- … -->` and `{/* … *\/}`.
+ * Text inside quotes is never taken for a comment ("http://x" or '/* not a comment'); with
+ * `blankStrings` its content is replaced with spaces too, so only real code is left.
+ */
+export function blankComments(content: string, options: { blankStrings?: boolean } = {}): string {
+  const out: string[] = [];
+  const blank = (text: string) => text.replace(/[^\n]/g, ' ');
+  let i = 0;
+
+  while (i < content.length) {
+    const char = content[i]!;
+    const next = content[i + 1];
+
+    // Strings: copy them whole (a backslash escapes the next character).
+    if (char === '"' || char === "'" || char === '`') {
+      let j = i + 1;
+      while (j < content.length && content[j] !== char) {
+        if (content[j] === '\\') j += 1;
+        // A normal quote never spans lines: stop at the end of the line (unbalanced quote in text).
+        if (char !== '`' && content[j] === '\n') break;
+        j += 1;
+      }
+      const text = content.slice(i, j + 1);
+      out.push(options.blankStrings ? char + blank(text.slice(1, -1)) + text.slice(-1) : text);
+      i = j + 1;
+      continue;
+    }
+
+    let end = -1;
+    if (char === '/' && next === '/') {
+      end = content.indexOf('\n', i);
+      if (end === -1) end = content.length;
+    } else if (char === '/' && next === '*') {
+      end = content.indexOf('*/', i + 2);
+      end = end === -1 ? content.length : end + 2;
+    } else if (content.startsWith('<!--', i)) {
+      end = content.indexOf('-->', i + 4);
+      end = end === -1 ? content.length : end + 3;
+    }
+
+    if (end !== -1) {
+      out.push(blank(content.slice(i, end)));
+      i = end;
+      continue;
+    }
+
+    out.push(char);
+    i += 1;
+  }
+
+  return out.join('');
+}
 
 export function consoleLogLines(content: string): number[] {
   const lines: number[] = [];
-  content.split('\n').forEach((line, index) => {
-    const match = CONSOLE_LOG_PATTERN.exec(line);
-    if (!match) return;
-    const before = line.slice(0, match.index);
-    if (before.includes('//') || /^\s*\*/.test(before)) return;
-    lines.push(index + 1);
-  });
+  blankComments(content, { blankStrings: true })
+    .split('\n')
+    .forEach((line, index) => {
+      if (CONSOLE_LOG_PATTERN.test(line)) lines.push(index + 1);
+    });
   return lines;
 }
 

@@ -1,6 +1,6 @@
 export { huntStaticTasks, type StaticHuntResult } from './hunt.js';
 export { tasksFromStructure } from './report-tasks.js';
-export { consoleLogLines, findConsoleLogs } from './console-logs.js';
+export { blankComments, consoleLogLines, findConsoleLogs } from './console-logs.js';
 export {
   astroImports,
   countH1,

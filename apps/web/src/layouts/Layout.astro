@@ -12,7 +12,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const navItems = [
   { href: '/', label: 'Dashboard' },
   { href: '/repositories', label: 'Repositories' },
-  { href: '#', label: 'Settings', soon: true },
 ];
 ---
 
@@ -23,12 +22,25 @@ const navItems = [
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <title>{title} · Sleepy Coder</title>
+    <script is:inline>
+      // Apply the saved theme before the page paints (no flash of the wrong theme).
+      try {
+        const theme = localStorage.getItem('sleepy-theme');
+        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+      } catch {
+        // Storage blocked: follow the system setting.
+      }
+    </script>
   </head>
   <body>
     <div class="shell">
       <aside class="sidebar">
         <a href="/" class="brand">
-          <span class="brand-mark" aria-hidden="true">z<sup>z</sup></span>
+          <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true">
+            <rect width="32" height="32" rx="7" />
+            <text x="13" y="24" font-size="19">z</text>
+            <text x="23.5" y="13.5" font-size="10" class="small-z">z</text>
+          </svg>
           <span>Sleepy Coder</span>
         </a>
         <nav>
@@ -38,30 +50,60 @@ const navItems = [
                 <li>
                   <a
                     href={item.href}
-                    class:list={['nav-link', { active: !item.soon && currentPath === item.href, soon: item.soon }]}
-                    aria-disabled={item.soon ? 'true' : undefined}
+                    class:list={['nav-link', { active: currentPath === item.href }]}
+                    aria-current={currentPath === item.href ? 'page' : undefined}
                   >
                     {item.label}
-                    {item.soon && <span class="soon-tag">soon</span>}
                   </a>
                 </li>
               ))
             }
           </ul>
         </nav>
+        <div class="theme-switch" role="group" aria-label="Theme">
+          <button type="button" data-theme-choice="auto">Auto</button>
+          <button type="button" data-theme-choice="light">Light</button>
+          <button type="button" data-theme-choice="dark">Dark</button>
+        </div>
         <p class="tagline">Let your code sleep.</p>
       </aside>
       <main class="content">
         <slot />
       </main>
     </div>
+    <script is:inline>
+      // Theme switch: "Auto" follows the system; Light/Dark are remembered in this browser.
+      (() => {
+        const buttons = document.querySelectorAll('[data-theme-choice]');
+        const current = () => document.documentElement.dataset.theme ?? 'auto';
+        const paint = () =>
+          buttons.forEach((button) =>
+            button.setAttribute('aria-pressed', String(button.dataset.themeChoice === current())),
+          );
+        buttons.forEach((button) =>
+          button.addEventListener('click', () => {
+            const choice = button.dataset.themeChoice;
+            if (choice === 'auto') delete document.documentElement.dataset.theme;
+            else document.documentElement.dataset.theme = choice;
+            try {
+              if (choice === 'auto') localStorage.removeItem('sleepy-theme');
+              else localStorage.setItem('sleepy-theme', choice);
+            } catch {
+              // Storage blocked: the choice lasts until the page is reloaded.
+            }
+            paint();
+          }),
+        );
+        paint();
+      })();
+    </script>
   </body>
 </html>
 
 <style>
   .shell {
     display: grid;
-    grid-template-columns: 220px 1fr;
+    grid-template-columns: 220px minmax(0, 1fr);
     min-height: 100vh;
   }
 
@@ -88,19 +130,24 @@ const navItems = [
   }
 
   .brand-mark {
-    display: grid;
-    place-items: center;
+    flex-shrink: 0;
     width: 32px;
     height: 32px;
-    border-radius: var(--radius-sm);
-    background: var(--color-accent-soft);
-    color: var(--color-accent);
-    font-size: 1rem;
   }
 
-  .brand-mark sup {
-    font-size: 0.55em;
-    opacity: 0.7;
+  .brand-mark rect {
+    fill: var(--color-accent-soft);
+  }
+
+  .brand-mark text {
+    fill: var(--color-accent);
+    font-family: var(--font-sans);
+    font-weight: 700;
+    text-anchor: middle;
+  }
+
+  .brand-mark .small-z {
+    opacity: 0.65;
   }
 
   nav ul {
@@ -130,41 +177,83 @@ const navItems = [
     color: var(--color-accent);
   }
 
-  .nav-link.soon {
-    pointer-events: none;
-    opacity: 0.55;
-  }
-
-  .soon-tag {
-    font-size: 0.7rem;
-    padding: 0 var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
-  }
-
   .tagline {
     margin-top: auto;
     color: var(--color-text-muted);
     font-size: 0.8rem;
   }
 
-  .content {
-    padding: var(--space-8);
-    max-width: 1100px;
+  .theme-switch {
+    display: flex;
+    padding: 2px;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
   }
 
-  @media (max-width: 720px) {
+  .theme-switch button {
+    flex: 1;
+    padding: 2px var(--space-2);
+    background: none;
+    border: none;
+    border-radius: 4px;
+    color: var(--color-text-muted);
+    font: inherit;
+    font-size: 0.75rem;
+    cursor: pointer;
+  }
+
+  .theme-switch button:hover {
+    color: var(--color-text);
+  }
+
+  .theme-switch button[aria-pressed='true'] {
+    background: var(--color-surface);
+    color: var(--color-accent);
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.15);
+  }
+
+  /* Components adapt to the space they get (container queries), not to the window size. */
+  .content {
+    container-type: inline-size;
+    min-width: 0;
+    width: 100%;
+    max-width: 1100px;
+    padding: var(--space-8);
+  }
+
+  /* Medium and small screens: the sidebar becomes a bar at the top. */
+  @media (max-width: 900px) {
     .shell {
-      grid-template-columns: 1fr;
+      grid-template-columns: minmax(0, 1fr);
+      grid-template-rows: auto 1fr;
     }
 
     .sidebar {
+      flex-direction: row;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: var(--space-2) var(--space-6);
+      padding: var(--space-3) var(--space-4);
       border-right: none;
       border-bottom: 1px solid var(--color-border);
     }
 
+    nav ul {
+      display: flex;
+      flex-wrap: wrap;
+    }
+
+    .theme-switch {
+      margin-left: auto;
+    }
+
+    .tagline {
+      display: none;
+    }
+
     .content {
-      padding: var(--space-4);
+      padding: var(--space-6) var(--space-4);
     }
   }
 </style>

@@ -68,7 +68,7 @@ same interface.
 Otherwise the first installed Gemma model is used, then any installed model.
 
 **Why:** Works out of the box with the existing Gemma install, while letting the user switch
-(e.g. to `qwen2.5:3b`) without touching code. A Settings screen can replace the env var later.
+(e.g. to `qwen2.5:3b`) without touching code.
 
 ## ADR-009 — "Ollama off" is a normal state
 

@@ -120,6 +120,47 @@ describe('console.log', () => {
     expect(consoleLogLines("console.log('a');\n// console.log('b');\nfoo(); console.log(x)\n/* console.log */\n")).toEqual([1, 3]);
   });
 
+  it('ignores every kind of comment, also across lines', () => {
+    const code = [
+      '/*',
+      '  console.log(old);',
+      '*/',
+      'const a = 1; /* console.log(a) */',
+      '<!-- console.log("in html") -->',
+      '{/* console.log(jsx) */}',
+      '<!--',
+      '  console.log(x)',
+      '-->',
+      '  console.log(real);',
+    ].join('\n');
+    expect(consoleLogLines(code)).toEqual([10]);
+  });
+
+  it('ignores JSDoc comments, with or without * at the start of the line', () => {
+    const code = [
+      '/**',
+      ' * Logs the menu.',
+      ' * @example',
+      ' *   console.log(menu)',
+      'console.log(line without a star)',
+      ' */',
+      'export function show() {}',
+      '/** console.log(one-line doc) */',
+    ].join('\n');
+    expect(consoleLogLines(code)).toEqual([]);
+  });
+
+  it('is not fooled by comment-like text inside strings', () => {
+    const code = [
+      "const url = 'https://example.com'; console.log(url);",
+      'const s = "/* not a comment"; console.log(s);',
+      '<p>Don\'t worry</p>',
+      'console.log(after);',
+      'const t = `console.log(in template)`;',
+    ].join('\n');
+    expect(consoleLogLines(code)).toEqual([1, 2, 4]);
+  });
+
   it('only checks front-end source files', async () => {
     await fixture({
       'src/components/Gallery.astro': "<script>\n  const x = 1;\n  console.log('debug', x);\n</script>\n",
