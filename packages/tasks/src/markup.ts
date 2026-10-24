@@ -6,13 +6,14 @@ import type { TaskDraft } from '@sleepy-coder/shared';
 /**
  * SEO and accessibility checks on markup, without AI:
  * - more than one <h1> on a page (following Astro imports: layout + page),
- * - <img> without alt,
+ * - pages without <title> or without <meta name="description">,
+ * - <img> without alt, links without text, target="_blank" without rel,
  * - <html> without lang.
  */
 
 const MARKUP_EXTENSIONS = ['.astro', '.html', '.htm', '.jsx', '.tsx', '.vue', '.svelte'];
 const MAX_FILE_BYTES = 256 * 1024;
-const MAX_MARKUP_TASKS = 20;
+const MAX_MARKUP_TASKS = 30;
 const MAX_DEPTH = 4;
 
 export interface MarkupFile {
@@ -54,6 +55,37 @@ export function imagesWithoutAlt(template: string): number {
   const tags = template.match(/<img\b[^>]*>/gi) ?? [];
   return tags.filter((tag) => !/\balt\s*=/i.test(tag) && !/\{\s*\.\.\./.test(tag)).length;
 }
+
+/** `<a href="…" target="_blank">` without `rel="noopener"` (or `noreferrer`, which implies it). */
+export function isUnsafeBlankTarget(tag: string): boolean {
+  return /\btarget\s*=\s*["']_blank["']/i.test(tag) && !/\brel\s*=\s*["'][^"']*\b(noopener|noreferrer)\b/i.test(tag);
+}
+
+export const LINK_PATTERN = /<a\b([^>]*)>([\s\S]*?)<\/a>/gi;
+
+/**
+ * A link with nothing a screen reader can read: no text, no aria-label/title,
+ * no image with alt text. Dynamic content ({…}, <slot />) counts as text.
+ */
+export function isEmptyLink(attributes: string, inner: string): boolean {
+  if (/\b(aria-label|aria-labelledby|title)\s*=/i.test(attributes)) return false;
+  if (/[{]|<slot\b/i.test(inner)) return false;
+  if (/<img\b[^>]*\balt\s*=\s*["'][^"']+["']/i.test(inner)) return false;
+  if (/<title\b/i.test(inner)) return false; // inline SVG with a title
+  return inner.replace(/<[^>]*>/g, '').trim() === '';
+}
+
+export function emptyLinks(template: string): number {
+  return [...template.matchAll(LINK_PATTERN)].filter((m) => isEmptyLink(m[1] ?? '', m[2] ?? '')).length;
+}
+
+export function unsafeBlankTargets(template: string): number {
+  return (template.match(/<a\b[^>]*>/gi) ?? []).filter(isUnsafeBlankTarget).length;
+}
+
+export const hasTitle = (template: string) => /<title[\s>]/i.test(template);
+export const hasMetaDescription = (template: string) =>
+  /<meta\b[^>]*\bname\s*=\s*["']description["']/i.test(template);
 
 export function htmlWithoutLang(template: string): boolean {
   const tag = /<html\b[^>]*>/i.exec(template)?.[0];
@@ -110,6 +142,18 @@ export function renderedH1(path: string, files: Map<string, MarkupFile>, depth =
 
   visiting.delete(path);
   return { total, sources: [...sources].sort() };
+}
+
+/** Every file a page renders: the page, then its components and layouts (recursively). */
+export function renderedFiles(path: string, files: Map<string, MarkupFile>, depth = 0, seen = new Set<string>()): string[] {
+  const file = files.get(path);
+  if (!file || depth > MAX_DEPTH || seen.has(path)) return [];
+  seen.add(path);
+  const result = [path];
+  for (const [name, target] of astroImports(file)) {
+    if (usages(file.template, name) > 0) result.push(...renderedFiles(target, files, depth + 1, seen));
+  }
+  return result;
 }
 
 const code = (text: string) => `\`${text}\``;
@@ -257,7 +301,65 @@ export async function findMarkupIssues(root: string, scanned: ScannedFile[]): Pr
     });
   }
 
-  // 2. Images without alt, and 3. <html> without lang.
+  // 2. Pages without <title> or meta description. The fix goes where the <head> is (usually the
+  //    layout), so pages sharing a layout become one task.
+  interface HeadGroup {
+    pages: string[];
+    title: boolean;
+    description: boolean;
+  }
+  const byHead = new Map<string, HeadGroup>();
+  const fullPages = [
+    ...pages.map((page) => ({ page, chain: renderedFiles(page, files) })),
+    ...[...files.keys()]
+      .filter((p) => /\.html?$/i.test(p))
+      .map((page) => ({ page, chain: [page] })),
+  ];
+  for (const { page, chain } of fullPages) {
+    const templates = chain.map((p) => files.get(p)!.template);
+    if (!templates.some((t) => /<html\b/i.test(t))) continue; // a partial, not a whole page
+    const head = chain.find((p) => /<head[\s>]/i.test(files.get(p)!.template)) ?? page;
+    const group = byHead.get(head) ?? { pages: [], title: true, description: true };
+    group.pages.push(page);
+    if (!templates.some(hasTitle)) group.title = false;
+    if (!templates.some(hasMetaDescription)) group.description = false;
+    byHead.set(head, group);
+  }
+
+  for (const [head, group] of byHead) {
+    const where = `${code(head.split('/').pop()!)}`;
+    const pagesText = group.pages.length === 1 ? code(group.pages[0]!) : `${group.pages.length} pages (${list(group.pages)})`;
+    if (!group.title) {
+      tasks.push({
+        fingerprint: `markup:title:${head}`,
+        source: 'static',
+        title: `Add a ${code('<title>')} in ${where}`,
+        description: `${pagesText} ${group.pages.length === 1 ? 'has' : 'have'} no ${code('<title>')}. Browsers show it in the tab and search engines use it as the result title.`,
+        category: 'seo',
+        priority: 'high',
+        complexity: 'small',
+        risk: 'low',
+        affectedFiles: [head],
+        suggestedImplementation: `Inside ${code('<head>')} in ${code(head)}, add a ${code('<title>')} with a short, unique title. In a shared layout, take it from a prop (e.g. ${code('<title>{title}</title>')}) so each page sets its own.`,
+      });
+    }
+    if (!group.description) {
+      tasks.push({
+        fingerprint: `markup:meta-description:${head}`,
+        source: 'static',
+        title: `Add a meta description in ${where}`,
+        description: `${pagesText} ${group.pages.length === 1 ? 'has' : 'have'} no ${code('<meta name="description">')}. Search engines often show it under the title in results.`,
+        category: 'seo',
+        priority: 'medium',
+        complexity: 'small',
+        risk: 'low',
+        affectedFiles: [head],
+        suggestedImplementation: `Inside ${code('<head>')} in ${code(head)}, add ${code('<meta name="description" content="…">')} with one or two sentences (about 150 characters). In a shared layout, take it from a prop so each page can have its own.`,
+      });
+    }
+  }
+
+  // 3. Images without alt, links without text, target="_blank" without rel, <html> without lang.
   for (const [path, file] of files) {
     const missingAlt = imagesWithoutAlt(file.template);
     if (missingAlt > 0) {
@@ -272,6 +374,38 @@ export async function findMarkupIssues(root: string, scanned: ScannedFile[]): Pr
         risk: 'low',
         affectedFiles: [path],
         suggestedImplementation: `Add a short ${code('alt')} that describes each image. For purely decorative images, use ${code('alt=""')}.`,
+      });
+    }
+
+    const empty = emptyLinks(file.template);
+    if (empty > 0) {
+      tasks.push({
+        fingerprint: `markup:empty-link:${path}`,
+        source: 'static',
+        title: `Give ${empty === 1 ? 'a link' : `${empty} links`} an accessible text in ${code(path.split('/').pop()!)}`,
+        description: `${code(path)} has ${empty} ${code('<a>')} without text a screen reader can read (for example, a link that only contains an icon).`,
+        category: 'seo',
+        priority: 'medium',
+        complexity: 'small',
+        risk: 'low',
+        affectedFiles: [path],
+        suggestedImplementation: `Add visible text, or an ${code('aria-label')} that says where the link goes (e.g. ${code('aria-label="GitHub profile"')}). For an icon image, give it a meaningful ${code('alt')}.`,
+      });
+    }
+
+    const blank = unsafeBlankTargets(file.template);
+    if (blank > 0) {
+      tasks.push({
+        fingerprint: `markup:blank-target:${path}`,
+        source: 'static',
+        title: `Add ${code('rel="noopener noreferrer"')} to ${blank === 1 ? 'a link' : `${blank} links`} with ${code('target="_blank"')} in ${code(path.split('/').pop()!)}`,
+        description: `${code(path)} opens ${blank === 1 ? 'a link' : `${blank} links`} in a new tab without ${code('rel')}. Older browsers let the new page control yours through ${code('window.opener')}.`,
+        category: 'seo',
+        priority: 'low',
+        complexity: 'small',
+        risk: 'low',
+        affectedFiles: [path],
+        suggestedImplementation: `Add ${code('rel="noopener noreferrer"')} to each ${code('<a target="_blank">')}.`,
       });
     }
 

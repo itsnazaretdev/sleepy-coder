@@ -39,7 +39,7 @@ const OFFLINE_MESSAGE = 'No connection to the backend.';
 const errorMessage = (error: unknown) =>
   error instanceof ApiRequestError ? describeError(error.code) : OFFLINE_MESSAGE;
 
-/** How often a running agent is checked. Live updates (SSE) come with Work Sessions. */
+/** How often a running (experimental) agent run is checked. */
 const RUN_POLL_MS = 2_000;
 
 /** React component: tasks of one repository, with hunting, review and fix guides. */
@@ -53,6 +53,7 @@ export default function TaskBoard({ repositoryId }: Props) {
   const [searching, setSearching] = useState<'none' | 'static' | 'ai'>('none');
   const [notice, setNotice] = useState<string | null>(null);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+
 
   const load = useCallback(async () => {
     setState({ kind: 'loading' });

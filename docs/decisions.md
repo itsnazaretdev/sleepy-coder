@@ -248,6 +248,12 @@ by the same extra `<h1>` become one task. When the main title is unclear, the ta
 user to decide. (Found on the CSS backgrounds site: a preview modal simulating a website had its
 own `<h1>`, and the first version of the rule blamed the hero.)
 
+Later additions (same approach, ADR-023 made rules the reliable core): pages without `<title>`
+or `<meta name="description">` (checked across the rendered page, reported in the file that has
+the `<head>`, so pages sharing a layout become one task), links without readable text,
+`target="_blank"` without `rel="noopener"`, and leftover `console.log` in front-end files under
+`src/` (server, API, scripts, tests and config files are skipped: logging there is often intended).
+
 **Why:** These issues are common, easy to verify with rules and often span two files (layout
 and page), which the AI never sees together because it only reads a few files. A rule always
 finds them, and it hands the agent exactly the files it needs. A fixed pipeline keeps every step predictable and testable, and the checks catch the most
@@ -294,4 +300,3 @@ other hand, were consistently right.
 explaining, the person is good at editing. It keeps the human in control (the brief's Assistant
 mode) and turns Sleepy Coder into a fast "where is the problem and why" tool. The agent code is
 tested and safe, costs nothing when off, and is ready for larger local models.
-

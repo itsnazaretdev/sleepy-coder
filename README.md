@@ -2,52 +2,76 @@
 
 **Let your code sleep. We'll handle the boring stuff.**
 
-Sleepy Coder is a local-first AI coding assistant. It analyzes your repositories, finds
-repetitive improvements (TODOs, missing tests, SEO issues…) and, once you approve them,
-shows you exactly where each problem is and how to fix it, using a local model via
-[Ollama](https://ollama.com). You stay in control: you make the change, Sleepy Coder checks it.
-No cloud, no paid APIs: your code, your data, your machine.
+Sleepy Coder is a local coding assistant that looks through your repositories for small,
+boring problems — a duplicate `<h1>`, an image without `alt`, a forgotten `console.log`, a TODO
+you never got back to — and shows you **exactly where each one is and how to fix it**.
+
+It runs on your machine with a local model through [Ollama](https://ollama.com).
+No cloud, no paid APIs, and it never changes your files: you make the fix, Sleepy Coder checks it.
 
 > Built for the Hacktoberfest **Slow and Steady** challenge.
 
-## Status
+## What it finds
 
-🚧 Phase 5 — Fix guides. Add a local repository and Sleepy Coder shows its languages,
-frameworks, testing tools and Git status, finds tasks (TODO/FIXME comments, missing tests,
-README or LICENSE, duplicate `<h1>`, images without `alt`, `<html>` without `lang`) and asks the
-local model (Gemma) for improvement ideas. Approve a task and open **How to fix**:
+**With rules** (fast, no AI, reliable):
 
-1. **Where** — the exact file and lines, found by rules (no AI, always correct), with an
-   *Open in VS Code* link.
-2. **How** — Gemma explains the problem, lists the steps and suggests code you can copy.
-3. **Check again** — after you fix it, the same rule that found the problem runs again. If it is
-   gone, the task moves to **Done**. AI-suggested tasks have no rule, so you mark them as done.
+- **SEO:** duplicate `<h1>` on a page (it follows Astro layouts and components), missing
+  `<title>`, missing `<meta name="description">`
+- **Accessibility:** images without `alt`, links without readable text, `<html>` without `lang`
+- **Code:** TODO / FIXME / HACK comments, leftover `console.log` in front-end code,
+  `target="_blank"` without `rel="noopener"`
+- **Repository:** missing README, LICENSE or tests
 
-Sleepy Coder never changes your files.
-See the roadmap in [`docs/brief.md`](docs/brief.md).
+**With AI** (ideas from Gemma): refactors, documentation, tests… anything it notices in your code.
+These are labelled **AI idea · verify it**: a small local model is good at spotting patterns,
+but it can be wrong, so check them against your code.
 
 ## Requirements
 
-- Node.js 22.13 or newer (uses the built-in `node:sqlite`)
+- Node.js 22.13 or newer
 - pnpm 10
-- [Ollama](https://ollama.com) running locally, with at least one model
-  (`ollama pull gemma3:4b` works well on a 16 GB laptop)
+- [Ollama](https://ollama.com) with a model installed. Gemma 3 4B works well on a 16 GB laptop:
 
-## Getting started
+  ```bash
+  ollama pull gemma3:4b
+  ```
+
+## Install and run
 
 ```bash
+git clone <this repository>
+cd sleepy-coder
 pnpm install
 pnpm dev
 ```
 
-- Dashboard: http://127.0.0.1:4321
-- Backend health: http://127.0.0.1:4317/health
+Open **http://127.0.0.1:4321**. Make sure Ollama is running (open the Ollama app, or run
+`ollama serve`): the dashboard shows whether it is connected and which model it will use.
 
-Both only listen on `127.0.0.1`: nothing is exposed to your network.
+Everything runs on `127.0.0.1`, so nothing is exposed to your network.
 
-## Configuration
+## How to use it
 
-By default Sleepy Coder uses the first Gemma model it finds. To use another one:
+1. **Add a repository.** Go to **Repositories**, press **Choose folder…** and pick the root
+   folder of a Git project. Sleepy Coder shows its languages, frameworks, tests and Git status.
+2. **Find tasks.** Press **Find tasks** for the rule-based checks (instant), and
+   **Suggest with AI** if you also want Gemma's ideas (takes a minute or two).
+3. **Review them.** **Approve** what you want to fix and **Discard** what you don't.
+4. **Open "How to fix"** on an approved task:
+   - **Where:** the file, the line and the code around it, with an **Open in VS Code** link.
+   - **How:** press **Ask Gemma how to fix it** for an explanation, the steps and suggested code
+     you can copy. For AI ideas, Gemma reads the real file first and tells you if the task does
+     not apply.
+5. **Fix it in your editor** and save.
+6. **Press "I fixed it — check again".** The same rule that found the problem runs again; if it
+   is gone, the task moves to **Done**. AI ideas have no rule behind them, so you mark them as
+   done yourself.
+
+If a problem you fixed comes back later, the next **Find tasks** puts it back in **Pending**.
+
+## Choosing the model
+
+Sleepy Coder uses the first Gemma model it finds in Ollama. To use another one:
 
 ```bash
 SLEEPY_MODEL=qwen2.5:3b pnpm dev
@@ -57,103 +81,25 @@ SLEEPY_MODEL=qwen2.5:3b pnpm dev
 |---|---|
 | `SLEEPY_MODEL` | first installed Gemma model |
 | `SLEEPY_OLLAMA_URL` | `http://127.0.0.1:11434` |
-| `SLEEPY_EXPERIMENTAL_AGENT` | off — set to `1` to show the experimental **Run** button |
+| `SLEEPY_EXPERIMENTAL_AGENT` | off (see below) |
 
-## API
+## Why it doesn't fix things for you
 
-| Method | Route | Description |
-|---|---|---|
-| GET | `/health` | Backend status |
-| GET | `/ollama/status` | Ollama running?, version, installed models, selected model |
-| POST | `/ollama/test` | Sends a short prompt to the selected model |
-| GET | `/repositories` | Saved repositories |
-| POST | `/repositories` | Adds a repository: `{ "path": "/abs/path" }` |
-| DELETE | `/repositories/:id` | Removes it from the list (never deletes files) |
-| GET | `/repositories/:id/analysis` | Read-only analysis: languages, stack, Git status, warnings |
-| GET | `/config` | What is turned on (`experimentalAgent`) |
-| GET | `/repositories/:id/tasks` | Tasks of a repository (`?status=pending\|approved\|done\|discarded`) |
-| POST | `/repositories/:id/tasks/hunt` | Looks for new tasks (no AI) |
-| POST | `/repositories/:id/tasks/suggest` | Asks the local model for improvement tasks (can take 1–2 min) |
-| PATCH | `/tasks/:id` | Approve, discard, mark as done or reset a task: `{ "status": "approved" }` |
-| GET | `/tasks/:id/guide` | Where the problem is (no AI) and the last fix guide |
-| POST | `/tasks/:id/guide` | Asks the local model how to fix the task (nothing is changed) |
-| POST | `/tasks/:id/check` | Runs the rules again; if the problem is gone the task becomes `done` |
-| POST | `/tasks/:id/run` | Experimental: runs the agent on an approved task (202, needs `SLEEPY_EXPERIMENTAL_AGENT=1`) |
-| GET | `/runs/:id` | Progress and result of a run: steps, branch, tests, diff |
-| GET | `/repositories/:id/runs` | Latest run of each task of a repository |
-| POST | `/system/pick-folder` | Opens the native folder dialog (Finder on macOS, zenity on Linux) |
+The first version had an agent that made the changes on its own Git branch. It was safe — it
+never broke anything — but with a 4B local model the edits were not reliable: it reformatted
+code instead of fixing it, dropped parts of files, or quoted code that wasn't there.
 
-POST, PATCH and DELETE requests must include the header `x-sleepy-client: web`, and every request
-must be addressed to `localhost` / `127.0.0.1`. This keeps other websites from triggering actions.
+The model was good at the other half: understanding a problem and explaining the fix. So Sleepy
+Coder does what it does reliably — rules find the exact lines, Gemma explains, you edit, the rule
+checks. The agent is still in the code as an experimental option for bigger models
+(`SLEEPY_EXPERIMENTAL_AGENT=1`).
 
-## Scripts
+## For developers
 
-| Command | What it does |
-|---|---|
-| `pnpm dev` | Runs backend and frontend together |
-| `pnpm dev:server` | Backend only |
-| `pnpm dev:web` | Frontend only |
-| `pnpm test` | Runs all tests (Vitest) |
-| `pnpm typecheck` | Type-checks every workspace |
-| `pnpm build` | Builds the frontend and type-checks the backend |
+Project structure, API, scripts and architecture decisions are in
+[`docs/development.md`](docs/development.md) and [`docs/decisions.md`](docs/decisions.md).
 
-## Project structure
-
-```text
-sleepy-coder/
-├── apps/
-│   ├── web/        # Astro + React Islands dashboard (plain CSS)
-│   └── server/     # Fastify API, listens on 127.0.0.1
-├── packages/
-│   ├── agent/      # Experimental agent: sandboxed workspace, test runner, edit pipeline
-│   ├── analyzer/   # File scan, languages and stack detection
-│   ├── git/        # Git inspection and agent worktrees (simple-git)
-│   ├── ollama/     # Minimal Ollama client (native fetch)
-│   ├── shared/     # Shared TypeScript types and constants
-│   └── tasks/      # Task discovery, problem locations and fix guides
-├── data/           # Local SQLite database, git-ignored
-└── docs/           # Brief and architecture decisions
-```
-
-## Two kinds of tasks
-
-| | **Find tasks** (rules) | **Suggest with AI** (Gemma 4B) |
-|---|---|---|
-| How | Fixed rules read your files | A small local model reads part of your code |
-| Finds | TODO/FIXME, duplicate `<h1>`, `<img>` without `alt`, `<html>` without `lang`, missing README/LICENSE/tests | Refactors, docs, tests… anything |
-| Reliable? | Yes: if it says it, it's in the code | No: ideas that can be wrong, so check them |
-| Exact location | Yes, file and line | Only when the idea names real code |
-| "Check again" | Yes, the rule runs again | No, you mark it as done |
-
-Sleepy Coder labels AI tasks as **AI idea · verify it**. A small model is good at spotting
-patterns and explaining fixes, but it sometimes describes code that is not there. When you ask
-for a fix guide, Gemma sees the real file first and can say that the task does not apply.
-
-## What I tried first: an autonomous agent
-
-The first plan was for the agent to make the change itself: it created a `git worktree` on a
-`sleepy/…` branch, asked Gemma for the edit, ran the tests and committed. The safety side worked
-— it never broke anything or committed a bad change — but with a 4B local model the edits
-themselves were not reliable. I tried three formats (whole files, search/replace blocks, and
-retries with the check's feedback) and kept hitting new failures: the model reformatted code
-instead of fixing it, dropped half a file, or "quoted" code that wasn't in the file.
-
-The model was good at the other half: understanding the problem and explaining the fix. So
-Sleepy Coder now does what it does reliably — rules find the exact lines, Gemma explains, you
-edit, the rule checks — and the agent stays in the code as an **experimental** option
-(`SLEEPY_EXPERIMENTAL_AGENT=1`) for bigger models. Details in ADR-023.
-
-## Safety
-
-Sleepy Coder only reads your repository. The experimental agent never touches your checkout: it works in a separate `git worktree` on
-its own `sleepy/…` branch, can only read and write files inside it (no `..`, no symlink escapes,
-no `.git`), cannot edit `package.json`, lockfiles, `.env` or tool configs, and the only command it
-can trigger is your repository's own `test` script. Nothing is merged or pushed for you.
-See ADR-018 and ADR-019 in [`docs/decisions.md`](docs/decisions.md).
-
-## Tech stack
-
-Astro · React · TypeScript · Fastify · Ollama · Vitest · plain CSS
+Built with Astro · React · TypeScript · Fastify · SQLite · Ollama · Vitest · plain CSS.
 
 ## License
 

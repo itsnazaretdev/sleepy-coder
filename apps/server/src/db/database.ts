@@ -83,6 +83,12 @@ const MIGRATIONS: string[] = [
   `
   ALTER TABLE task_guides ADD COLUMN applies INTEGER NOT NULL DEFAULT 1;
   `,
+
+  // 5 — (work sessions, tried and removed; kept as a no-op so version numbers stay the same)
+  `SELECT 1;`,
+
+  // 6 — drops the work sessions table from databases that already ran the old migration 5
+  `DROP TABLE IF EXISTS work_sessions;`,
 ];
 
 export type Database = DatabaseSync;

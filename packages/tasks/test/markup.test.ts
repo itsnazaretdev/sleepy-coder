@@ -165,13 +165,13 @@ describe('findMarkupIssues', () => {
   });
 
   it('reports a page with two <h1> of its own', async () => {
-    const tasks = await fixture({ 'src/pages/index.astro': '<html lang="en"><h1>A</h1><h1>B</h1></html>' });
+    const tasks = await fixture({ 'src/pages/index.astro': '<html lang="en"><head><title>T</title><meta name="description" content="D"></head><h1>A</h1><h1>B</h1></html>' });
     expect(tasks.map((t) => t.title)).toEqual(['Fix duplicate `<h1>` in `src/pages/index.astro`']);
   });
 
   it('checks plain HTML and JSX files one by one', async () => {
     const tasks = await fixture({
-      'index.html': '<html lang="en"><h1>A</h1><h1>B</h1></html>',
+      'index.html': '<html lang="en"><head><title>T</title><meta name="description" content="D"></head><h1>A</h1><h1>B</h1></html>',
       'src/App.tsx': 'export const App = () => <main><h1>One</h1></main>;',
     });
     expect(tasks.map((t) => t.fingerprint)).toEqual(['markup:h1:index.html']);
@@ -190,7 +190,7 @@ describe('findMarkupIssues', () => {
 
   it('finds nothing in clean markup', async () => {
     const tasks = await fixture({
-      'src/layouts/Layout.astro': '<html lang="en"><header><p class="logo">Site</p></header><slot /></html>',
+      'src/layouts/Layout.astro': '<html lang="en"><head><title>T</title><meta name="description" content="D"></head><header><p class="logo">Site</p></header><slot /></html>',
       'src/pages/index.astro': page(),
     });
     expect(tasks).toEqual([]);

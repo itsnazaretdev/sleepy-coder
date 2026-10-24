@@ -1,6 +1,8 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import type { CodeLocation, TaskDraft } from '@sleepy-coder/shared';
+import { consoleLogLines } from './console-logs.js';
+import { isEmptyLink, isUnsafeBlankTarget, LINK_PATTERN } from './markup.js';
 
 /**
  * Finds WHERE a task's problem is, by reading the repository right now (no AI).
@@ -36,12 +38,18 @@ function ignoredRanges(path: string, content: string): Array<[number, number]> {
   return ranges;
 }
 
-function markupHits(path: string, content: string, pattern: RegExp, keep: (tag: string) => boolean, note: string): Hit[] {
+function markupHits(
+  path: string,
+  content: string,
+  pattern: RegExp,
+  keep: (tag: string, match: RegExpMatchArray) => boolean,
+  note: string,
+): Hit[] {
   const ignored = ignoredRanges(path, content);
   const hits: Hit[] = [];
   for (const match of content.matchAll(pattern)) {
     if (ignored.some(([start, end]) => match.index >= start && match.index < end)) continue;
-    if (keep(match[0])) hits.push({ index: match.index, note });
+    if (keep(match[0], match)) hits.push({ index: match.index, note });
   }
   return hits;
 }
@@ -108,6 +116,26 @@ function findHits(task: LocatableTask, path: string, content: string): Hit[] {
   }
   if (task.category === 'seo' && title.includes('`lang`')) {
     return markupHits(path, content, /<html\b[^>]*>/gi, (tag) => !/\blang\s*=/i.test(tag), '`<html>` without `lang`');
+  }
+
+  if (task.category === 'seo' && title.includes('`<title>`')) {
+    return markupHits(path, content, /<head(?=[\s>])/gi, () => true, '`<head>` without `<title>`');
+  }
+  if (task.category === 'seo' && title.includes('meta description')) {
+    return markupHits(path, content, /<head(?=[\s>])/gi, () => true, '`<head>` without a meta description');
+  }
+  if (task.category === 'seo' && title.includes('accessible text')) {
+    return markupHits(path, content, new RegExp(LINK_PATTERN.source, 'gi'), (_, m) => isEmptyLink(m[1] ?? '', m[2] ?? ''), 'Link without text');
+  }
+  if (task.category === 'seo' && title.includes('`target="_blank"`')) {
+    return markupHits(path, content, /<a\b[^>]*>/gi, isUnsafeBlankTarget, '`target="_blank"` without `rel`');
+  }
+  if (title.includes('`console.log`')) {
+    const lines = content.split('\n');
+    return consoleLogLines(content).map((line) => ({
+      index: lines.slice(0, line - 1).join('\n').length + (line > 1 ? 1 : 0),
+      note: '`console.log`',
+    }));
   }
 
   if (task.category === 'todo') {

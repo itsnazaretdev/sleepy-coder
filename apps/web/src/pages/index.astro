@@ -2,11 +2,6 @@
 import Layout from '../layouts/Layout.astro';
 import HealthStatus from '../components/HealthStatus.tsx';
 import OllamaStatus from '../components/OllamaStatus.tsx';
-
-const placeholders = [
-  { title: 'Approved tasks', text: 'Tasks ready to run will show up here.', phase: 'Phase 6' },
-  { title: 'Recent sessions', text: 'History of Work Sessions and their reports.', phase: 'Phase 6' },
-];
 ---
 
 <Layout title="Dashboard">
@@ -15,9 +10,6 @@ const placeholders = [
       <h1>Dashboard</h1>
       <p class="subtitle">Your local coding assistant. It works when you decide.</p>
     </div>
-    <button class="primary" type="button" disabled title="Available in Phase 6">
-      Start Work Session
-    </button>
   </header>
 
   <section class="grid">
@@ -29,20 +21,11 @@ const placeholders = [
         <h2>Repositories</h2>
         <span class="arrow" aria-hidden="true">→</span>
       </div>
-      <p>Add a local repository and analyze its structure, languages and stack.</p>
+      <p>
+        Add a local repository, find tasks with rules or ask Gemma for ideas, and open “How to fix” to see where
+        each problem is and how to solve it.
+      </p>
     </a>
-
-    {
-      placeholders.map((card) => (
-        <article class="card">
-          <div class="card-head">
-            <h2>{card.title}</h2>
-            <span class="phase">{card.phase}</span>
-          </div>
-          <p>{card.text}</p>
-        </article>
-      ))
-    }
   </section>
 </Layout>
 
@@ -63,22 +46,6 @@ const placeholders = [
   .subtitle {
     color: var(--color-text-muted);
     margin-top: var(--space-1);
-  }
-
-  .primary {
-    padding: var(--space-3) var(--space-6);
-    background: var(--color-accent-strong);
-    color: var(--color-text);
-    border: none;
-    border-radius: var(--radius-md);
-    font: inherit;
-    font-weight: 600;
-    cursor: pointer;
-  }
-
-  .primary:disabled {
-    opacity: 0.45;
-    cursor: not-allowed;
   }
 
   .grid {
@@ -125,14 +92,6 @@ const placeholders = [
 
   .arrow {
     color: var(--color-accent);
-  }
-
-  .phase {
-    font-size: 0.7rem;
-    color: var(--color-accent);
-    background: var(--color-accent-soft);
-    padding: 0 var(--space-2);
-    border-radius: 999px;
   }
 
   @media (max-width: 720px) {
