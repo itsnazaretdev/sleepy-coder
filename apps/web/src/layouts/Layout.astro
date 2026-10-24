@@ -12,7 +12,6 @@ const currentPath = Astro.url.pathname.replace(/\/$/, '') || '/';
 const navItems = [
   { href: '/', label: 'Dashboard' },
   { href: '/repositories', label: 'Repositories' },
-  { href: '#', label: 'Settings', soon: true },
 ];
 ---
 
@@ -51,11 +50,10 @@ const navItems = [
                 <li>
                   <a
                     href={item.href}
-                    class:list={['nav-link', { active: !item.soon && currentPath === item.href, soon: item.soon }]}
-                    aria-disabled={item.soon ? 'true' : undefined}
+                    class:list={['nav-link', { active: currentPath === item.href }]}
+                    aria-current={currentPath === item.href ? 'page' : undefined}
                   >
                     {item.label}
-                    {item.soon && <span class="soon-tag">soon</span>}
                   </a>
                 </li>
               ))
@@ -177,18 +175,6 @@ const navItems = [
   .nav-link.active {
     background: var(--color-accent-soft);
     color: var(--color-accent);
-  }
-
-  .nav-link.soon {
-    pointer-events: none;
-    opacity: 0.55;
-  }
-
-  .soon-tag {
-    font-size: 0.7rem;
-    padding: 0 var(--space-2);
-    border: 1px solid var(--color-border);
-    border-radius: 999px;
   }
 
   .tagline {
